@@ -1,9 +1,9 @@
 
 CC = cl
-CFLAGS = /MT -Iquickjs /std:c11 
+CFLAGS = /MT -Iquickjs /std:c11 /Os /O1
 
 LINK = link
-LDFLAGS = /NODEFAULTLIB:api-ms-win-crt-*.lib /NODEFAULTLIB:ucrt.lib ucrt.lib vcruntime.lib kernel32.lib libcmt.lib libvcruntime.lib /NODEFAULTLIB:MSVCRT /NODEFAULTLIB:libucrt.lib 
+LDFLAGS = /NODEFAULTLIB:api-ms-win-crt-*.lib /NODEFAULTLIB:ucrt.lib ucrt.lib vcruntime.lib kernel32.lib libcmt.lib libvcruntime.lib /NODEFAULTLIB:MSVCRT /NODEFAULTLIB:libucrt.lib
 
 all: nodert.exe
 

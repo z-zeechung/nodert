@@ -27,8 +27,16 @@ int main(int argc, char *argv[]) {
     js_std_add_helpers(ctx, argc, argv);
     js_std_init_handlers(rt);
 
-    const char *script = "console.log(123)";
-    JSValue result = JS_Eval(ctx, script, strlen(script), "<internal>", JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_ASYNC);
+    js_init_module_std(ctx, "qjs:std");
+    js_init_module_os(ctx, "qjs:os");
+    // js_init_module_bjson(ctx, "qjs:bjson");
+
+    FILE *file = fopen("lib/main.js", "r");
+    char script[1024*32];
+    fread(script, 1, sizeof(script), file);
+    fclose(file);
+
+    JSValue result = JS_Eval(ctx, script, strlen(script), "<internal>", JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_ASYNC | JS_EVAL_TYPE_MODULE);
 
     int ret = 0;
     if (JS_IsException(result)) {

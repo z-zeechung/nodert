@@ -5,19 +5,16 @@ const webpack = require('webpack');
 fs.rmSync('./libnode', { recursive: true, force: true })
 fs.mkdirSync('./libnode')
 
-let _LIBS = fs.readdirSync("./node/lib")
-              .filter(n=>n!="internal")
-              // .filter(n=>n!="test")
-              .filter(n=>!n.startsWith("_"))
-              .filter(n=>n.split(".").length<=1||n.endsWith(".js"))
-let LIBS = []
-for(let lib of _LIBS){
-  if(lib.endsWith(".js")){
-    LIBS.push(lib)
-  }else{
-    LIBS = LIBS.concat(fs.readdirSync(path.join("./node/lib", lib)).map(n=>`${lib}/${n}`))
-  }
-}
+LIBS = [
+  'os.js'
+]
+
+WHITELIST = [
+  "./node/lib/internal/per_context/primordials.js",
+  "./node/lib/os.js",
+    'internal/errors',
+    'internal/validators'
+]
 
 const config = {
 
@@ -52,57 +49,21 @@ const config = {
 
   externals: [
     ({ request }, callback) => {
-      // if (request?.includes('internal/bootstrap/')) {
-      //   return callback(null, 'commonjs ' + request);
-      // }
-      // if (request?.includes('internal/debugger/')) {
-      //   return callback(null, 'commonjs ' + request);
-      // }
-      // if (request?.includes('internal/main/')) {
-      //   return callback(null, 'commonjs ' + request);
-      // }
-      // if (request?.includes('internal/modules/')) {
-      //   return callback(null, 'commonjs ' + request);
-      // }
-      // if (request?.includes('internal/process/')) {
-      //   return callback(null, 'commonjs ' + request);
-      // }
-      // if (request?.includes('internal/test/')) {
-      //   return callback(null, 'commonjs ' + request);
-      // }
-      // if (request?.includes('internal/test_runner/')) {
-      //   return callback(null, 'commonjs ' + request);
-      // }
-      if (request?.includes('amaro/')) {
+      if (!WHITELIST.includes(request)) {
         return callback(null, 'commonjs ' + request);
       }
       callback();
     },
   ],
 
-  optimization: {
-    usedExports: true,  
-    minimize: true,  
-    splitChunks: {
-      cacheGroups: {
-        commons: {
-          name: 'internal', 
-          chunks: 'initial',
-          minChunks: 2,  
-          minSize: 0  
-        }
-      }
-    }
-  },
-
-  stats: {
-    modulesSpace: 99999,
-    nestedModules: true,
-    // reasons: true,
-    errorDetails: true,
-    modulesSort: 'size',
-    chunkGroups: false,
-  }
+  // stats: {
+  //   modulesSpace: 99999,
+  //   nestedModules: true,
+  //   // reasons: true,
+  //   errorDetails: true,
+  //   modulesSort: 'size',
+  //   chunkGroups: false,
+  // }
 };
 
 module.exports = config;
