@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "compile:node": "webpack"
+  },
+  "dependencies": {
+    "mkdirp": "^3.0.1",
+    "webpack": "^5.99.7"
+  },
+  "devDependencies": {
+    "webpack-cli": "^6.0.1"
+  }
+}
