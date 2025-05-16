@@ -56,6 +56,21 @@ const config = {
     },
   ],
 
+  // optimization: {
+  //   usedExports: true,  
+  //   minimize: true,  
+  //   splitChunks: {
+  //     cacheGroups: {
+  //       commons: {
+  //         name: 'internal', 
+  //         chunks: 'initial',
+  //         minChunks: 2,  
+  //         minSize: 0  
+  //       }
+  //     }
+  //   }
+  // },
+
   // stats: {
   //   modulesSpace: 99999,
   //   nestedModules: true,

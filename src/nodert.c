@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <quickjs.h>
 #include <quickjs-libc.h>
+#include "bindings.h"
 
 void print_js_error(JSContext *ctx, JSValue error) {
     const char *str = JS_ToCString(ctx, error);
@@ -30,6 +31,9 @@ int main(int argc, char *argv[]) {
     js_init_module_std(ctx, "qjs:std");
     js_init_module_os(ctx, "qjs:os");
     // js_init_module_bjson(ctx, "qjs:bjson");
+
+    js_init_binding_os(ctx, "os");
+    js_init_binding_constants(ctx, "constants");
 
     FILE *file = fopen("lib/main.js", "r");
     char script[1024*32];
