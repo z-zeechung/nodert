@@ -7,8 +7,8 @@ LDFLAGS = /NODEFAULTLIB:api-ms-win-crt-*.lib /NODEFAULTLIB:ucrt.lib ucrt.lib vcr
 
 all: nodert.exe
 
-nodert.exe: os.obj constants.obj nodert.obj qjs-libc.obj
-	$(LINK) src/os.obj src/constants.obj src/nodert.obj libqjs/Release/qjs.lib src/qjs-libc.obj $(LDFLAGS) /OUT:nodert.exe
+nodert.exe: os.obj constants.obj util.obj nodert.obj qjs-libc.obj
+	$(LINK) src/os.obj src/constants.obj src/util.obj src/nodert.obj libqjs/Release/qjs.lib src/qjs-libc.obj $(LDFLAGS) /OUT:nodert.exe
 
 nodert.obj:
 	$(CC) src/nodert.c $(CFLAGS) /c /Fo:src/nodert.obj
@@ -21,6 +21,9 @@ os.obj:
 
 constants.obj:
 	$(CC) src/constants.c $(CFLAGS) /c /Fo:src/constants.obj
+
+util.obj:
+	$(CC) src/util.c $(CFLAGS) /c /Fo:src/util.obj
 
 clean:
 	del /Q nodert.exe src\*.obj

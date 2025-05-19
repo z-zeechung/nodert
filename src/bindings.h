@@ -9,6 +9,7 @@ extern "C" {
 
 JSModuleDef *js_init_binding_os(JSContext *ctx, const char *module_name);
 JSModuleDef *js_init_binding_constants(JSContext *ctx, const char *module_name);
+JSModuleDef *js_init_binding_util(JSContext *ctx, const char *module_name);
 
 #ifdef __cplusplus
 } /* extern "C" */

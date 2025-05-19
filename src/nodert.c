@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
 
     js_init_binding_os(ctx, "os");
     js_init_binding_constants(ctx, "constants");
+    js_init_binding_util(ctx, "util");
 
     FILE *file = fopen("lib/main.js", "r");
     char script[1024*32];
