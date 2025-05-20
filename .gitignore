@@ -9,7 +9,12 @@ node_modules
 /string_decoder
 /base64-js
 /ieee754
+/stream
+/component-emitter
 *.exe
 *.obj
 /lib/iconv-lite.js
 /lib/buffer.js
+/lib/stream.js
+/lib/string_decoder.js
+*.js.LICENSE.txt

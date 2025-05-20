@@ -2,24 +2,21 @@ const webpack = require("webpack");
 const path = require("path");
 
 const config = {
-  entry: "./buffer/index.js",
+  entry: "./string_decoder/lib/string_decoder.js",
   output: {
-    filename: "buffer.js",
+    filename: "string_decoder.js",
     path: path.resolve('./lib'),
-    libraryTarget: "umd", 
+    libraryTarget: "umd",
   },
   target: 'node',
   mode: "production",
+  externals: {
+    'safe-buffer': 'commonjs buffer.js',
+  },
   optimization: {
     minimize: false,
     concatenateModules: false, 
   },
-  resolve: {
-    alias: {
-      'ieee754': path.resolve('./ieee754/index.js'),
-      'base64-js': path.resolve('./base64-js/index.js'),
-    },
-  }
 };
 
 webpack(config, (err, stats) => {

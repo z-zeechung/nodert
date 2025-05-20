@@ -6,6 +6,7 @@ const config = {
   output: {
     filename: "iconv-lite.js",
     path: path.resolve('./lib'),
+    libraryTarget: "umd",
   },
   target: 'node',
   mode: "production",
@@ -13,6 +14,11 @@ const config = {
     modules: [
       'iconv-lite/lib'
     ]
+  },
+  externals: {
+    'string_decoder': 'commonjs string_decoder.js',
+    'stream': 'commonjs stream.js',
+    'safer-buffer': 'commonjs buffer.js',
   },
   optimization: {
     minimize: false,

@@ -1,6 +1,6 @@
 "use strict";
 
-// var Buffer = require("safer-buffer").Buffer;
+var Buffer = require("safer-buffer").Buffer;
 
 var bomHandling = require("./bom-handling"),
     iconv = module.exports;

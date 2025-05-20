@@ -2,24 +2,23 @@ const webpack = require("webpack");
 const path = require("path");
 
 const config = {
-  entry: "./buffer/index.js",
+  entry: "./stream/index.js",
   output: {
-    filename: "buffer.js",
+    filename: "stream.js",
     path: path.resolve('./lib'),
-    libraryTarget: "umd", 
+    libraryTarget: "umd",
   },
   target: 'node',
   mode: "production",
+  resolve: {
+    alias: {
+      'emitter': path.resolve('./component-emitter/index.js'),
+    },
+  },
   optimization: {
     minimize: false,
     concatenateModules: false, 
   },
-  resolve: {
-    alias: {
-      'ieee754': path.resolve('./ieee754/index.js'),
-      'base64-js': path.resolve('./base64-js/index.js'),
-    },
-  }
 };
 
 webpack(config, (err, stats) => {
