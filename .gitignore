@@ -1,8 +1,12 @@
 node_modules
-.vscode
-libnode
-libqjs
-node
-quickjs
+/.vscode
+/libnode
+/libqjs
+/node
+/quickjs
+/icu
+/buffer
+/string_decoder
 *.exe
 *.obj
+/lib/iconv-lite.js
