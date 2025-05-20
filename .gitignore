@@ -7,6 +7,9 @@ node_modules
 /icu
 /buffer
 /string_decoder
+/base64-js
+/ieee754
 *.exe
 *.obj
 /lib/iconv-lite.js
+/lib/buffer.js
