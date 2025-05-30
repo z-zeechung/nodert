@@ -1,7 +1,9 @@
 const { internalBinding } = require('internal/test/binding');
 
-// console.log(internalBinding("string_decoder"));
+console.log(internalBinding("timers"));
 
 // console.log(Buffer)
 
-console.log(require('./lib/iconv-lite.js'))
+// console.log(process.stdin)
+
+// console.log(require('./lib/iconv-lite.js'))
