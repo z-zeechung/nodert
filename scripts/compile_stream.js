@@ -1,23 +1,24 @@
 const webpack = require("webpack");
 const path = require("path");
+const fs = require("fs");
 
 const config = {
-  entry: "./stream/index.js",
+  entry: "./shims/stream-browserify-3.0.0/index.js",
   output: {
-    filename: "stream.js",
+    filename: "stream.corelib.js",
     path: path.resolve('./lib'),
     libraryTarget: "umd",
   },
   target: 'node',
   mode: "production",
   resolve: {
+    modules: [
+      'shims/stream-browserify-3.0.0',
+      'shims/stream-browserify-3.0.0/node_modules'
+    ],
     alias: {
-      'emitter': path.resolve('./component-emitter/index.js'),
-    },
-  },
-  optimization: {
-    minimize: false,
-    concatenateModules: false, 
+      './internal/streams/stream': 'readable-stream/lib/internal/streams/stream-browser.js'
+    }
   },
 };
 

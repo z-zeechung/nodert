@@ -1,8 +1,8 @@
-const { internalBinding } = require('internal/test/binding');
+// const { internalBinding } = require('internal/test/binding');
 
-console.log(internalBinding("timers"));
+// console.log(internalBinding("timers"));
 
-// console.log(Buffer)
+console.log(Buffer)
 
 // console.log(process.stdin)
 

@@ -1,10 +1,11 @@
 const webpack = require("webpack");
 const path = require("path");
+const fs = require("fs");
 
 const config = {
-  entry: "./iconv-lite/lib/index.js",
+  entry: "./shims/browserify-zlib-0.2.0/src/index.js",
   output: {
-    filename: "iconv-lite.js",
+    filename: "zlib.corelib.js",
     path: path.resolve('./lib'),
     libraryTarget: "umd",
   },
@@ -12,17 +13,9 @@ const config = {
   mode: "production",
   resolve: {
     modules: [
-      'iconv-lite/lib'
+      'shims/browserify-zlib-0.2.0/src',
+      'shims/browserify-zlib-0.2.0/node_modules'
     ]
-  },
-  externals: {
-    'string_decoder': 'commonjs string_decoder.js',
-    'stream': 'commonjs stream.js',
-    'safer-buffer': 'commonjs buffer.js',
-  },
-  optimization: {
-    minimize: false,
-    concatenateModules: false, 
   },
 };
 

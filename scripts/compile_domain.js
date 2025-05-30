@@ -3,9 +3,9 @@ const path = require("path");
 const fs = require("fs");
 
 const config = {
-  entry: "./shims/buffer-6.0.3/index.js",
+  entry: "./shims/domain-browser-5.7.0/source/index.js",
   output: {
-    filename: "buffer.corelib.js",
+    filename: "domain.corelib.js",
     path: path.resolve('./lib'),
     libraryTarget: "umd",
   },
@@ -13,8 +13,7 @@ const config = {
   mode: "production",
   resolve: {
     modules: [
-      'shims/buffer-6.0.3',
-      'shims/buffer-6.0.3/node_modules'
+      'shims/domain-browser-5.7.0/node_modules'
     ]
   },
 };
@@ -32,6 +31,4 @@ webpack(config, (err, stats) => {
       modules: false,
     })
   );
-
-  fs.rmSync('lib/buffer.corelib.js.LICENSE.txt')
 });

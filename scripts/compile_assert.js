@@ -3,9 +3,9 @@ const path = require("path");
 const fs = require("fs");
 
 const config = {
-  entry: "./shims/buffer-6.0.3/index.js",
+  entry: "./shims/commonjs-assert-2.0.0/assert.js",
   output: {
-    filename: "buffer.corelib.js",
+    filename: "assert.corelib.js",
     path: path.resolve('./lib'),
     libraryTarget: "umd",
   },
@@ -13,8 +13,8 @@ const config = {
   mode: "production",
   resolve: {
     modules: [
-      'shims/buffer-6.0.3',
-      'shims/buffer-6.0.3/node_modules'
+      'shims/commonjs-assert-2.0.0',
+      'shims/commonjs-assert-2.0.0/node_modules'
     ]
   },
 };
@@ -33,5 +33,5 @@ webpack(config, (err, stats) => {
     })
   );
 
-  fs.rmSync('lib/buffer.corelib.js.LICENSE.txt')
+  fs.rmSync('lib/assert.corelib.js.LICENSE.txt')
 });

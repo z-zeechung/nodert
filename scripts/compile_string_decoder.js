@@ -1,21 +1,20 @@
 const webpack = require("webpack");
 const path = require("path");
+const fs = require("fs");
 
 const config = {
-  entry: "./string_decoder/lib/string_decoder.js",
+  entry: "./shims/string_decoder-1.3.0/lib/string_decoder.js",
   output: {
-    filename: "string_decoder.js",
+    filename: "string_decoder.corelib.js",
     path: path.resolve('./lib'),
     libraryTarget: "umd",
   },
   target: 'node',
   mode: "production",
-  externals: {
-    'safe-buffer': 'commonjs buffer.js',
-  },
-  optimization: {
-    minimize: false,
-    concatenateModules: false, 
+  resolve: {
+    modules: [
+      'shims/string_decoder-1.3.0/node_modules'
+    ]
   },
 };
 
@@ -32,4 +31,6 @@ webpack(config, (err, stats) => {
       modules: false,
     })
   );
+
+  fs.rmSync('lib/string_decoder.corelib.js.LICENSE.txt')
 });
