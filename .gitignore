@@ -8,3 +8,4 @@ node_modules
 
 /shims
 /lib/*.corelib.js
+/lib/primordials.js
