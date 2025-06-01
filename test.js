@@ -1,6 +1,6 @@
 const { internalBinding } = require('internal/test/binding');
 
-console.log(internalBinding("builtins").builtinIds);
+console.log(internalBinding('types'));
 
 // console.log(Buffer)
 

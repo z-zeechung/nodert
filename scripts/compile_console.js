@@ -18,20 +18,8 @@ const config = {
         'internal/console/constructor': 'node/lib/internal/console/constructor.js',
             'internal/errors': 'shims/console/errors.js',
             'internal/validators': 'shims/console/validators.js',
-            'internal/util/inspect': 'node/lib/internal/util/inspect.js',
-                /** the `$` mark here is essential, it prevents webpack 
-                 *  from misunderstanding `internal/util` as a directory 
-                 *  that causes `internal/util/*` to be wrongly parsed */
-                'internal/util$': 'shims/console/util.js', 
-                // 'internal/errors'
-                'internal/util/types': 'node/lib/internal/util/types.js',
-                    'internal/crypto/keys': 'shims/console/crypto.js',
-                'internal/assert': 'node/lib/internal/assert.js',
-                    // 'internal/errors'
-                'internal/bootstrap/realm': 'shims/console/bootstrap.js',
-                // 'internal/validators'
-                'internal/url': 'shims/console/url.js',
-            // 'internal/util/types'
+            'internal/util/inspect': 'shims/console/util.js',
+            'internal/util/types': 'shims/console/util.types.js',
             'internal/constants': 'node/lib/internal/constants.js',
             'internal/util/debuglog': 'node/lib/internal/util/debuglog.js',
                 // 'internal/constants'
@@ -46,7 +34,25 @@ const config = {
             'internal/cli_table': 'node/lib/internal/cli_table.js',
                 // 'internal/util/inspect'
             'internal/v8/startup_snapshot': 'shims/console/v8.js',
+
+            'internalBinding': 'shims/console/internalBinding.js'
     }
+  },
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: [
+          path.resolve('./shims') 
+        ],
+        use: [
+          {
+            loader: path.resolve(__dirname, 'inject-internalBinding-loader.js'),
+          },
+        ],
+        enforce: 'pre',
+      },
+    ],
   },
 };
 
@@ -63,8 +69,4 @@ webpack(config, (err, stats) => {
       modules: false,
     })
   );
-
-  const content = fs.readFileSync('lib/console.corelib.js').toString();
-  const replaced = content.replace(/internalBinding\(['"]([a-z_]+)['"]\)/g, "require('$1.binding')");
-  fs.writeFileSync('lib/console.corelib.js', replaced);
 });
