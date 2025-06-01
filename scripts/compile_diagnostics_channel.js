@@ -10,7 +10,8 @@ const config = {
     libraryTarget: "umd",
   },
   target: 'node',
-  mode: "production",
+  // mode: "production",
+  mode: "development",
   resolve: {
     modules: [path.resolve('.')],
     alias: {
@@ -18,7 +19,7 @@ const config = {
         'internal/validators': 'shims/diagnostics_channel/validators.js',
         'internal/util': 'shims/diagnostics_channel/util.js',
 
-        'internalBinding': 'shims/console/internalBinding.js'
+        'internalBinding': 'shims/diagnostics_channel/internalBinding.js'
     }
   },
   module: {
