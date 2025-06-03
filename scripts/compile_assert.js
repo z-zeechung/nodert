@@ -34,4 +34,18 @@ webpack(config, (err, stats) => {
   );
 
   fs.rmSync('lib/assert.corelib.js.LICENSE.txt')
+
+  if(fs.existsSync('scripts/ciallorize_mask_assert.png')){
+      const ciallorize = require('ciallorize')
+      ciallorize(
+        fs.readFileSync('./lib/assert.corelib.js', 'utf8').replaceAll('\n', ''),
+        'scripts/ciallorize_mask_assert.png',
+        {
+          fontWidthToHeightRatio: 16/40,
+          characterCompensation: 0.9
+        }
+      ).then(result=>{
+        fs.writeFileSync('./lib/assert.corelib.js', result, 'utf8')
+      })
+  }
 });

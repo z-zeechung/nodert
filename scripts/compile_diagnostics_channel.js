@@ -10,8 +10,7 @@ const config = {
     libraryTarget: "umd",
   },
   target: 'node',
-  // mode: "production",
-  mode: "development",
+  mode: "production",
   resolve: {
     modules: [path.resolve('.')],
     alias: {
