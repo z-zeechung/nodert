@@ -2,6 +2,8 @@
 #define QUICKJS_BINDINGS_H
 
 #include <quickjs.h>
+#include <quickjs-libc.h>
+#include "global.h"
 
 #ifdef __cplusplus
 extern "C" {

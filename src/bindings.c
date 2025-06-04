@@ -1,15 +1,467 @@
 #include "bindings.h"
 
-#define countof(arr) (sizeof(arr) / sizeof(*arr))
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include <windows.h>
+#include <tlhelp32.h>
+#include <fcntl.h>
+#include <io.h>
+static wchar_t* utf8_to_wchar(const char* utf8) {
+    if (!utf8) return NULL;
 
-static JSValue foobar(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-    return JS_NewString(ctx, "foobar");
+    int size = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, NULL, 0);
+    if (size == 0) return NULL;
+
+    wchar_t* wstr = (wchar_t*)malloc(size * sizeof(wchar_t));
+    if (!wstr) return NULL;
+
+    if (MultiByteToWideChar(CP_UTF8, 0, utf8, -1, wstr, size) == 0) {
+        free(wstr);
+        return NULL;
+    }
+
+    return wstr;
 }
 
 
+#define countof(arr) (sizeof(arr) / sizeof(*arr))
+
+
+// get current architecture
+static JSValue arch(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    #if defined(__x86_64__) || defined(_M_X64)
+        #define ARCH "x64"
+    #elif defined(__i386__) || defined(_M_IX86)
+        #define ARCH "ia32"
+    #elif defined(__aarch64__) || defined(_M_ARM64)
+        #define ARCH "arm64"
+    #elif defined(__arm__) || defined(_M_ARM)
+        #define ARCH "arm"
+    #elif defined(__mips__)
+        #define ARCH "mips"
+    #elif defined(__powerpc64__) || defined(__ppc64__)
+        #define ARCH "ppc64"
+    #elif defined(__powerpc__) || defined(__ppc__)
+        #define ARCH "ppc"
+    #elif defined(__riscv)
+        #define ARCH "riscv64"
+    #elif defined(__s390x__)
+        #define ARCH "s390x"
+    #elif defined(__s390__)
+        #define ARCH "s390"
+    #else
+        #define ARCH "unknown"
+    #endif
+    return JS_NewString(ctx, ARCH);
+}
+
+// get current os's name
+static JSValue platform(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    #if defined(_WIN32) || defined(_WIN64)
+        #define PLATFORM "win32" // Windows 
+    #elif defined(__APPLE__) || defined(__MACH__)
+        #define PLATFORM "darwin" // macOS and iOS
+    #elif defined(__linux__)
+        #define PLATFORM "linux"  // Linux
+    #elif defined(__FreeBSD__)
+        #define PLATFORM "freebsd" // FreeBSD
+    #elif defined(__OpenBSD__)
+        #define PLATFORM "openbsd" // OpenBSD
+    #elif defined(__sun) || defined(__sun__)
+        #define PLATFORM "sunos"  // Solaris/SunOS
+    #elif defined(_AIX)
+        #define PLATFORM "aix"    // IBM AIX
+    #else
+        #define PLATFORM "unknown" 
+    #endif
+    return JS_NewString(ctx, PLATFORM);
+}
+
+// get nanoseconds timestamp. note: this timestamp is a relative value, and has nothing to do with specific calendar
+static JSValue hrtime(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    LARGE_INTEGER freq, counter;
+    QueryPerformanceFrequency(&freq);  
+    QueryPerformanceCounter(&counter);  
+
+    int64_t nanosec = (int64_t)((counter.QuadPart * 1000000000ULL) / freq.QuadPart);
+
+    return JS_NewInt64(ctx, nanosec);
+}
+
+// get current working directory
+static JSValue cwd(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    DWORD size = GetCurrentDirectoryW(0, NULL);
+    if (size == 0) {
+        return JS_ThrowInternalError(ctx, "GetCurrentDirectoryW failed (size=0)");
+    }
+
+    wchar_t *wbuf = (wchar_t *)js_malloc(ctx, size * sizeof(wchar_t));
+    if (!wbuf) {
+        return JS_ThrowOutOfMemory(ctx);
+    }
+
+    DWORD ret = GetCurrentDirectoryW(size, wbuf);
+    if (ret == 0 || ret >= size) {
+        js_free(ctx, wbuf);
+        return JS_ThrowInternalError(ctx, "GetCurrentDirectoryW failed");
+    }
+
+    int utf8_size = WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, NULL, 0, NULL, NULL);
+    if (utf8_size == 0) {
+        js_free(ctx, wbuf);
+        return JS_ThrowInternalError(ctx, "WideCharToMultiByte failed (size=0)");
+    }
+
+    char *utf8_buf = (char *)js_malloc(ctx, utf8_size);
+    if (!utf8_buf) {
+        js_free(ctx, wbuf);
+        return JS_ThrowOutOfMemory(ctx);
+    }
+
+    if (WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, utf8_buf, utf8_size, NULL, NULL) == 0) {
+        js_free(ctx, wbuf);
+        js_free(ctx, utf8_buf);
+        return JS_ThrowInternalError(ctx, "WideCharToMultiByte failed");
+    }
+
+    JSValue result = JS_NewString(ctx, utf8_buf);
+
+    js_free(ctx, wbuf);
+    js_free(ctx, utf8_buf);
+
+    return result;
+}
+
+// get the path of runtime executable
+static JSValue execPath(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    DWORD size = MAX_PATH;
+    wchar_t *wbuf = NULL;
+
+    while (1) {
+        wbuf = (wchar_t *)js_realloc(ctx, wbuf, size * sizeof(wchar_t));
+        if (!wbuf) {
+            return JS_ThrowOutOfMemory(ctx);
+        }
+
+        DWORD ret = GetModuleFileNameW(NULL, wbuf, size);
+        if (ret == 0) {
+            js_free(ctx, wbuf);
+            return JS_ThrowInternalError(ctx, "GetModuleFileNameW failed");
+        }
+
+        if (ret < size) {
+            break; 
+        }
+
+        size *= 2;
+    }
+
+    int utf8_size = WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, NULL, 0, NULL, NULL);
+    if (utf8_size == 0) {
+        js_free(ctx, wbuf);
+        return JS_ThrowInternalError(ctx, "WideCharToMultiByte failed (size=0)");
+    }
+
+    char *utf8_buf = (char *)js_malloc(ctx, utf8_size);
+    if (!utf8_buf) {
+        js_free(ctx, wbuf);
+        return JS_ThrowOutOfMemory(ctx);
+    }
+
+    if (WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, utf8_buf, utf8_size, NULL, NULL) == 0) {
+        js_free(ctx, wbuf);
+        js_free(ctx, utf8_buf);
+        return JS_ThrowInternalError(ctx, "WideCharToMultiByte failed");
+    }
+
+    JSValue result = JS_NewString(ctx, utf8_buf);
+
+    js_free(ctx, wbuf);
+    js_free(ctx, utf8_buf);
+
+    return result;
+}
+
+// get the title of current process
+static JSValue title(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    JSValue path = execPath(ctx, this_val, argc, argv);
+    if (JS_IsException(path)) {
+        return path; 
+    }
+
+    const char *utf8_path = JS_ToCString(ctx, path);
+    if (!utf8_path) {
+        JS_FreeValue(ctx, path);
+        return JS_ThrowInternalError(ctx, "JS_ToCString failed");
+    }
+
+    const char *last_slash = strrchr(utf8_path, '\\');
+    if (!last_slash) {
+        last_slash = strrchr(utf8_path, '/');
+    }
+
+    const char *filename = last_slash ? last_slash + 1 : utf8_path;
+
+    JSValue result = JS_NewString(ctx, filename);
+
+    JS_FreeCString(ctx, utf8_path);
+    JS_FreeValue(ctx, path);
+
+    return result;
+}
+
+// get the pid of current process
+static JSValue pid(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    DWORD pid = GetCurrentProcessId();
+    return JS_NewInt64(ctx, pid);
+}
+
+// get the pid of parent process
+static DWORD GetParentPID(DWORD pid) {
+    DWORD ppid = 0;
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    
+    if (hSnapshot != INVALID_HANDLE_VALUE) {
+        PROCESSENTRY32 pe32;
+        pe32.dwSize = sizeof(PROCESSENTRY32);
+        
+        if (Process32First(hSnapshot, &pe32)) {
+            do {
+                if (pe32.th32ProcessID == pid) {
+                    ppid = pe32.th32ParentProcessID;
+                    break;
+                }
+            } while (Process32Next(hSnapshot, &pe32));
+        }
+        CloseHandle(hSnapshot);
+    }
+    return ppid;
+}
+static JSValue ppid(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    DWORD pid = GetCurrentProcessId();
+    DWORD ppid = GetParentPID(pid);
+    return JS_NewInt64(ctx, ppid);
+}
+
+// get environs as k-v object
+static JSValue env(JSContext *ctx) {
+    wchar_t *env_block = GetEnvironmentStringsW();
+    if (!env_block) {
+        return JS_ThrowInternalError(ctx, "GetEnvironmentStringsW failed");
+    }
+
+    JSValue env_obj = JS_NewObject(ctx);
+
+    wchar_t *current = env_block;
+    while (*current != L'\0') {
+        wchar_t *equal_pos = wcschr(current, L'=');
+        if (!equal_pos) {
+            current += wcslen(current) + 1;
+            continue;
+        }
+
+        size_t key_len = equal_pos - current;
+        wchar_t *value = equal_pos + 1;
+
+        char key_utf8[256], value_utf8[4096];
+        WideCharToMultiByte(CP_UTF8, 0, current, key_len, key_utf8, sizeof(key_utf8), NULL, NULL);
+        WideCharToMultiByte(CP_UTF8, 0, value, -1, value_utf8, sizeof(value_utf8), NULL, NULL);
+
+        JS_SetPropertyStr(ctx, env_obj, key_utf8, JS_NewString(ctx, value_utf8));
+
+        current += wcslen(current) + 1;
+    }
+
+    FreeEnvironmentStringsW(env_block);
+
+    return env_obj;
+}
+
+// graceful exit. TODO: improve cleanup procedure
+static JSValue js_exit(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    int exit_code = 0;
+    
+    if (argc > 0) {
+        if (JS_ToInt32(ctx, &exit_code, argv[0])) {
+            return JS_ThrowTypeError(ctx, "Exit code must be an integer");
+        }
+    }
+
+    JSRuntime *rt = JS_GetRuntime(ctx);
+
+    JS_FreeContext(ctx);        
+    js_std_free_handlers(rt);     
+    JS_FreeRuntime(rt);      
+
+    fflush(NULL);       
+    exit(exit_code);   
+    
+    return JS_UNDEFINED;
+}
+
+// exit without cleanup
+static JSValue reallyExit(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    int exit_code = 0;
+    if (argc > 0) JS_ToInt32(ctx, &exit_code, argv[0]); 
+    
+    exit(exit_code); 
+    return JS_UNDEFINED;
+}
+
+// boom~ abrupt exit
+static JSValue js_abort(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    (void)ctx; (void)this_val; (void)argc; (void)argv;
+    abort();
+    return JS_UNDEFINED;
+}
+
+// stdout
+static JSValue js_stdout(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    if (argc == 0) return JS_UNDEFINED;
+
+    const char* payload = JS_ToCString(ctx, argv[0]);
+    if (!payload) return JS_ThrowInternalError(ctx, "failed to get string");
+
+    wchar_t* wpayload = utf8_to_wchar(payload);
+    JS_FreeCString(ctx, payload); 
+
+    if (!wpayload) return JS_ThrowInternalError(ctx, "failed to convert utf8 to wchar");
+
+    int old_mode = _setmode(_fileno(stdout), _O_U16TEXT); 
+    if( old_mode == -1) return JS_ThrowInternalError(ctx, "failed to set stdout mode");
+    wprintf(L"%s", wpayload);
+    _setmode(_fileno(stdout), old_mode);    
+
+    free(wpayload);
+    return JS_UNDEFINED;
+}
+
+// stderr
+static JSValue js_stderr(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    if (argc == 0) return JS_UNDEFINED;
+
+    const char* payload = JS_ToCString(ctx, argv[0]);
+    if (!payload) return JS_ThrowInternalError(ctx, "failed to get string");
+
+    wchar_t* wpayload = utf8_to_wchar(payload);
+    JS_FreeCString(ctx, payload);
+
+    if (!wpayload) return JS_ThrowInternalError(ctx, "failed to convert utf8 to wchar");
+
+    int old_mode = _setmode(_fileno(stderr), _O_U16TEXT); 
+    if( old_mode == -1) return JS_ThrowInternalError(ctx, "failed to set stderr mode");
+    fwprintf(stderr, L"%s", wpayload);
+    _setmode(_fileno(stderr), old_mode);
+
+    free(wpayload);
+    return JS_UNDEFINED;
+}
+
+// umask: if argv[0] is provided, alter umask and return old value. otherwise return current umask
+// why isn't it working on windows(always return 0)? need further investigation
+static JSValue js_umask(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    int new_mask = -1; 
+
+    if (argc >= 1) {
+        uint32_t mask;
+        if (JS_ToUint32(ctx, &mask, argv[0]) != 0) {
+            return JS_ThrowTypeError(ctx, "umask must be an octal number (e.g. 0o22)");
+        }
+        new_mask = (int)mask;
+    }
+
+    int old_mask;
+    old_mask = _umask(new_mask);
+    if (new_mask == -1) _umask(old_mask); 
+
+    return JS_NewUint32(ctx, (uint32_t)old_mask);
+}
+
+// argv: get argv as a js array
+static JSValue js_argv(JSContext *ctx) {
+    JSValue js_array = JS_NewArray(ctx);
+    if (JS_IsException(js_array)) {
+        return JS_EXCEPTION;
+    }
+
+    for (int i = 0; i < p_argc; i++) {
+        JSValue js_arg = JS_NewString(ctx, p_argv[i]);
+        if (JS_IsException(js_arg)) {
+            JS_FreeValue(ctx, js_array);
+            return JS_EXCEPTION;
+        }
+        JS_SetPropertyUint32(ctx, js_array, i, js_arg);
+    }
+
+    return js_array;
+}
+
+// kill
+static JSValue js_kill(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    int pid;
+    int signal = 9; 
+
+    if (argc < 1) {
+        return JS_ThrowTypeError(ctx, "pid is required");
+    }
+    if (JS_ToInt32(ctx, &pid, argv[0]) != 0) {
+        return JS_ThrowTypeError(ctx, "pid must be an integer");
+    }
+    if (argc >= 2 && JS_ToInt32(ctx, &signal, argv[1]) != 0) {
+        return JS_ThrowTypeError(ctx, "signal must be an integer");
+    }
+
+    // if sig=0, simply check the process
+    if (signal == 0) {
+        HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, (DWORD)pid);
+        if (!hProcess) {
+            DWORD err = GetLastError();
+            const char* msg = (err == ERROR_INVALID_PARAMETER) ? "Process does not exist" : "No permission";
+            return JS_ThrowInternalError(ctx, "%s (error %lu)", msg, err);
+        }
+        CloseHandle(hProcess);
+        return JS_UNDEFINED; 
+    }
+
+    // if is any non-zero signal on windows, kill the process
+    HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, (DWORD)pid);
+    if (!hProcess) {
+        DWORD err = GetLastError();
+        return JS_ThrowInternalError(ctx, "OpenProcess failed (error %lu)", err);
+    }
+
+    BOOL success = TerminateProcess(hProcess, 1);
+    CloseHandle(hProcess);
+
+    if (!success) {
+        return JS_ThrowInternalError(ctx, "TerminateProcess failed (error %lu)", GetLastError());
+    }
+
+    return JS_UNDEFINED;
+}
+
+
+
 static const JSCFunctionListEntry bindings_funcs[] = {
-    JS_CFUNC_DEF("foobar", 0, foobar),
+    JS_CFUNC_DEF("arch", 0, arch),
+    JS_CFUNC_DEF("platform", 0, platform),
+    JS_CFUNC_DEF("hrtime", 0, hrtime),
+    JS_CFUNC_DEF("cwd", 0, cwd),
+    JS_CFUNC_DEF("execPath", 0, execPath),
+    JS_CFUNC_DEF("title", 0, title),
+    JS_CFUNC_DEF("pid", 0, pid),
+    JS_CFUNC_DEF("ppid", 0, ppid),
+    JS_CFUNC_DEF("env", 0, env),
+    JS_CFUNC_DEF("exit", 0, js_exit),
+    JS_CFUNC_DEF("reallyExit", 0, reallyExit),
+    JS_CFUNC_DEF("abort", 0, js_abort),
+    JS_CFUNC_DEF("stdout", 0, js_stdout),
+    JS_CFUNC_DEF("stderr", 0, js_stderr),
+    JS_CFUNC_DEF("umask", 0, js_umask),
+    JS_CFUNC_DEF("argv", 0, js_argv),
+    JS_CFUNC_DEF("kill", 0, js_kill),
 };
 
 static int bindings_module_init(JSContext *ctx, JSModuleDef *m) {

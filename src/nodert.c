@@ -3,8 +3,12 @@
 #include <quickjs-libc.h>
 #include "bindings.h"
 #include "resource.h"
+#include "global.h"
 
-void print_js_error(JSContext *ctx, JSValue error) {
+int p_argc;
+char **p_argv;
+
+static void print_js_error(JSContext *ctx, JSValue error) {
     const char *str = JS_ToCString(ctx, error);
     
     JSValue stack_val = JS_GetPropertyStr(ctx, error, "stack");
@@ -22,6 +26,10 @@ void print_js_error(JSContext *ctx, JSValue error) {
 }
 
 int main(int argc, char *argv[]) {
+
+    p_argc = argc;
+    p_argv = argv;
+
     JSRuntime *rt = JS_NewRuntime();
     JS_SetHostPromiseRejectionTracker(rt, js_std_promise_rejection_tracker, NULL);
     JSContext *ctx = JS_NewContext(rt);
