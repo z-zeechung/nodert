@@ -1,0 +1,4 @@
+#include <windows.h>
+#include "resource.h"
+
+IDR_INIT_BINDINGS RCDATA "init_bindings.js"

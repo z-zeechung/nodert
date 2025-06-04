@@ -5,6 +5,7 @@ node_modules
 /quickjs
 *.exe
 *.obj
+/src/resource.res
 
 /shims/*-*
 /lib/*.corelib.js

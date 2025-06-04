@@ -2,6 +2,7 @@
 #include <quickjs.h>
 #include <quickjs-libc.h>
 #include "bindings.h"
+#include "resource.h"
 
 void print_js_error(JSContext *ctx, JSValue error) {
     const char *str = JS_ToCString(ctx, error);
@@ -32,14 +33,15 @@ int main(int argc, char *argv[]) {
     js_init_module_os(ctx, "qjs:os");
     // js_init_module_bjson(ctx, "qjs:bjson");
 
-    js_init_binding_os(ctx, "os");
-    js_init_binding_constants(ctx, "constants");
-    js_init_binding_util(ctx, "util");
+    js_init_bindings(ctx, "bindings");
 
     FILE *file = fopen("lib/main.js", "r");
     char script[1024*32];
     fread(script, 1, sizeof(script), file);
     fclose(file);
+
+    char* init_bindings_script = load_utf8_resource_file(IDR_INIT_BINDINGS);
+    JS_Eval(ctx, init_bindings_script, strlen(init_bindings_script), "<init_bindings>", JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_STRICT | JS_EVAL_TYPE_MODULE);
 
     JSValue result = JS_Eval(ctx, script, strlen(script), "<internal>", JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_ASYNC | JS_EVAL_TYPE_MODULE);
 
