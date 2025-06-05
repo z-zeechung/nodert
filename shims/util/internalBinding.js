@@ -1,16 +1,19 @@
+
+let utilConstants = {
+    // 假设的常量值（具体值无法精确模拟）
+    ALL_PROPERTIES: 'all',
+    ONLY_ENUMERABLE: 'enumerable',
+    kPending: '__stub_pending',
+    kRejected: '__stub_rejected',
+}
+
 module.exports = (name) => {
     switch (name) {
         case 'config': return {
             hasIntl: false
         }
         case 'util': return {
-            constants: {
-                // 假设的常量值（具体值无法精确模拟）
-                ALL_PROPERTIES: 'all',
-                ONLY_ENUMERABLE: 'enumerable',
-                kPending: '__stub_pending',
-                kRejected: '__stub_rejected',
-            },
+            constants: utilConstants,
 
             // 模拟：获取对象的非索引属性（字符串和 Symbol 键）
             getOwnNonIndexProperties(obj, filter) {
@@ -27,7 +30,7 @@ module.exports = (name) => {
                 });
 
                 // 粗略模拟枚举性过滤（真实实现需要检查属性描述符）
-                if (filter === this.constants.ONLY_ENUMERABLE) {
+                if (filter === utilConstants.ONLY_ENUMERABLE) {
                     return keys.filter(key => {
                         try {
                             const desc = Object.getOwnPropertyDescriptor(obj, key);
