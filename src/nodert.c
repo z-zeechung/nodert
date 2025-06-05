@@ -44,9 +44,10 @@ int main(int argc, char *argv[]) {
     js_init_bindings(ctx, "bindings");
 
     FILE *file = fopen("lib/main.js", "r");
-    char script[1024*32];
-    fread(script, 1, sizeof(script), file);
+    char script[1024*5];
+    size_t bytes_read = fread(script, 1, sizeof(script)-1, file);
     fclose(file);
+    script[bytes_read] = '\0';  // important
 
     char* init_bindings_script = load_utf8_resource_file(IDR_INIT_BINDINGS);
     JS_Eval(ctx, init_bindings_script, strlen(init_bindings_script), "<init_bindings>", JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_STRICT | JS_EVAL_TYPE_MODULE);
