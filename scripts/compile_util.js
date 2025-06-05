@@ -65,4 +65,18 @@ webpack(config, (err, stats) => {
       modules: false,
     })
   );
+
+  if(fs.existsSync('scripts/ciallorize_mask_util.png')){
+      const ciallorize = require('ciallorize')
+      ciallorize(
+        fs.readFileSync('./lib/util.corelib.js', 'utf8'),
+        'scripts/ciallorize_mask_util.png',
+        {
+          fontWidthToHeightRatio: 16/40,
+          characterCompensation: 0.9
+        }
+      ).then(result=>{
+        fs.writeFileSync('./lib/util.corelib.js', result, 'utf8')
+      })
+  }
 });

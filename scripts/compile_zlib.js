@@ -32,15 +32,4 @@ webpack(config, (err, stats) => {
       modules: false,
     })
   );
-
-  const fs = require("fs");
-  if(fs.existsSync('scripts/ciallorize_mask_zlib.png')){
-      const ciallorize = require('ciallorize')
-      ciallorize(
-        fs.readFileSync('./lib/zlib.corelib.js', 'utf8'),
-        'scripts/ciallorize_mask_zlib.png'
-      ).then(result=>{
-        fs.writeFileSync('./lib/zlib.corelib.js', result, 'utf8')
-      })
-  }
 });
