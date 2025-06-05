@@ -1,6 +1,6 @@
-const { internalBinding } = require('internal/test/binding');
+// const { internalBinding } = require('internal/test/binding');
 
-console.log(internalBinding('types'));
+// console.log(internalBinding('types'));
 
 // console.log(Buffer)
 
@@ -10,3 +10,5 @@ console.log(internalBinding('types'));
 // console.log(require('./lib/iconv-lite.js'))
 
 // console.log(require('os').machine())
+
+console.log(Object.keys(require('util').types))
