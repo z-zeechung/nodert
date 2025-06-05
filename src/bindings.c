@@ -8,6 +8,8 @@
 #include <tlhelp32.h>
 #include <fcntl.h>
 #include <io.h>
+#include <shlobj.h>
+#include <lmcons.h>
 static wchar_t* utf8_to_wchar(const char* utf8) {
     if (!utf8) return NULL;
 
@@ -23,6 +25,26 @@ static wchar_t* utf8_to_wchar(const char* utf8) {
     }
 
     return wstr;
+}
+static char *wstr_to_utf8(JSContext *ctx, const wchar_t *wstr) {
+    if (!wstr) return NULL;
+
+    int utf8_size = WideCharToMultiByte(
+        CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL
+    );
+    if (utf8_size == 0) return NULL;
+
+    char *utf8_str = js_malloc(ctx, utf8_size);
+    if (!utf8_str) return NULL;
+
+    if (WideCharToMultiByte(
+        CP_UTF8, 0, wstr, -1, utf8_str, utf8_size, NULL, NULL
+    ) == 0) {
+        js_free(ctx, utf8_str);
+        return NULL;
+    }
+
+    return utf8_str;
 }
 
 
@@ -442,6 +464,227 @@ static JSValue js_kill(JSContext *ctx, JSValueConst this_val, int argc, JSValueC
     return JS_UNDEFINED;
 }
 
+// endianness. 1234 if LE, 4321 if BE
+static JSValue endianness(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    int num = 1;
+    char *ptr = (char *)&num;
+    return JS_NewInt32(ctx, ((*ptr == 1) ? 1234 : 4321));
+}
+
+// freemem
+static JSValue freemem(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    MEMORYSTATUSEX memInfo;
+    memInfo.dwLength = sizeof(memInfo);
+    if (!GlobalMemoryStatusEx(&memInfo)) {
+        return JS_ThrowInternalError(ctx, "GlobalMemoryStatusEx failed");
+    }
+    return JS_NewInt64(ctx, memInfo.ullAvailPhys); 
+}
+
+// homedir
+static JSValue homedir(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    wchar_t wpath[MAX_PATH];
+
+    if (FAILED(SHGetFolderPathW(NULL, CSIDL_PROFILE, NULL, 0, wpath))) {
+        return JS_ThrowInternalError(ctx, "Failed to get home directory");
+    }
+
+    char *utf8_path = wstr_to_utf8(ctx, wpath);
+    if (!utf8_path) {
+        return JS_ThrowInternalError(ctx, "Failed to convert path to UTF-8");
+    }
+
+    JSValue result = JS_NewString(ctx, utf8_path);
+    js_free(ctx, utf8_path);  
+    return result;
+}
+
+// hostname
+static JSValue hostname(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    wchar_t wname[MAX_COMPUTERNAME_LENGTH + 1];
+    DWORD size = sizeof(wname) / sizeof(wname[0]);
+
+    if (!GetComputerNameExW(ComputerNameDnsHostname, wname, &size)) {
+        return JS_ThrowInternalError(ctx, "Failed to get hostname");
+    }
+
+    char *utf8_name = wstr_to_utf8(ctx, wname);
+    if (!utf8_name) {
+        return JS_ThrowInternalError(ctx, "Failed to convert hostname to UTF-8");
+    }
+
+    JSValue result = JS_NewString(ctx, utf8_name);
+    js_free(ctx, utf8_name); 
+    return result;
+}
+
+// osRelease
+static JSValue osRelease(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    typedef LONG (WINAPI *RtlGetVersionFunc)(PRTL_OSVERSIONINFOW);
+    RtlGetVersionFunc pRtlGetVersion = (RtlGetVersionFunc)GetProcAddress(
+        GetModuleHandleW(L"ntdll.dll"), "RtlGetVersion"
+    );
+
+    RTL_OSVERSIONINFOW versionInfo = {0};
+    versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
+
+    if (pRtlGetVersion && pRtlGetVersion(&versionInfo) == 0) {
+        wchar_t wversion[64];
+        swprintf(wversion, sizeof(wversion) / sizeof(wversion[0]),
+                L"%lu.%lu.%lu",
+                versionInfo.dwMajorVersion,
+                versionInfo.dwMinorVersion,
+                versionInfo.dwBuildNumber);
+
+        char *utf8_version = wstr_to_utf8(ctx, wversion);
+        if (!utf8_version) {
+            return JS_ThrowInternalError(ctx, "Failed to convert version to UTF-8");
+        }
+
+        JSValue result = JS_NewString(ctx, utf8_version);
+        js_free(ctx, utf8_version);
+        return result;
+    }
+
+    // fallback to GetVersionExW (might be inaccurate)
+    OSVERSIONINFOW osvi = {0};
+    osvi.dwOSVersionInfoSize = sizeof(osvi);
+    if (GetVersionExW(&osvi)) {
+        wchar_t wversion[64];
+        swprintf(wversion, sizeof(wversion) / sizeof(wversion[0]),
+                L"%lu.%lu.%lu",
+                osvi.dwMajorVersion,
+                osvi.dwMinorVersion,
+                osvi.dwBuildNumber);
+
+        char *utf8_version = wstr_to_utf8(ctx, wversion);
+        if (!utf8_version) {
+            return JS_ThrowInternalError(ctx, "Failed to convert version to UTF-8");
+        }
+
+        JSValue result = JS_NewString(ctx, utf8_version);
+        js_free(ctx, utf8_version);
+        return result;
+    }
+
+    return JS_ThrowInternalError(ctx, "Failed to get OS version");
+}
+
+// tmpdir
+static JSValue tmpdir(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    // not required on Windows
+    return JS_UNDEFINED;
+}
+
+// totalmem
+static JSValue totalmem(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    MEMORYSTATUSEX memInfo;
+    memInfo.dwLength = sizeof(memInfo);
+
+    if (!GlobalMemoryStatusEx(&memInfo)) {
+        return JS_ThrowInternalError(ctx, "Failed to get total memory");
+    }
+
+    return JS_NewInt64(ctx, memInfo.ullTotalPhys);
+}
+
+// osType
+static JSValue osType(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    // fixed for win32
+    return JS_NewString(ctx, "Windows_NT");
+}
+
+// osVersion
+static JSValue osVersion(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    wchar_t product_name[64] = L"";
+    HKEY hKey;
+    if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 
+                      0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+        DWORD size = sizeof(product_name);
+        RegQueryValueExW(hKey, L"ProductName", NULL, NULL, 
+                        (LPBYTE)product_name, &size);
+        RegCloseKey(hKey);
+    }
+
+    char *utf8_version = wstr_to_utf8(ctx, product_name);
+    if (!utf8_version) {
+        return JS_ThrowInternalError(ctx, "Failed to convert version to UTF-8");
+    }
+
+    JSValue result = JS_NewString(ctx, utf8_version);
+    js_free(ctx, utf8_version);
+    return result;
+}
+
+// osMachine
+static JSValue osMachine(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    SYSTEM_INFO sysInfo;
+    GetNativeSystemInfo(&sysInfo);
+
+    const wchar_t *arch;
+    switch (sysInfo.wProcessorArchitecture) {  
+        case PROCESSOR_ARCHITECTURE_AMD64:
+            arch = L"x86_64";
+            break;
+        case PROCESSOR_ARCHITECTURE_ARM64:
+            arch = L"arm64";
+            break;
+        case PROCESSOR_ARCHITECTURE_INTEL:
+            arch = L"x86";
+            break;
+        case PROCESSOR_ARCHITECTURE_ARM:
+            arch = L"arm";
+            break;
+        default:
+            arch = L"unknown";
+    }
+
+    char *utf8_arch = wstr_to_utf8(ctx, arch);
+    if (!utf8_arch) {
+        return JS_ThrowInternalError(ctx, "Failed to convert architecture to UTF-8");
+    }
+
+    JSValue result = JS_NewString(ctx, utf8_arch);
+    js_free(ctx, utf8_arch);
+    return result;
+}
+
+// uid
+static JSValue uid(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv){
+    // on windows
+    return JS_NewUint32(ctx, 0xFFFFFFFF);
+}
+
+// gid
+static JSValue gid(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv){
+    // on windows
+    return JS_NewUint32(ctx, 0xFFFFFFFF);
+}
+
+// username
+static JSValue username(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    wchar_t username[UNLEN + 1]; 
+    DWORD size = UNLEN + 1;
+
+    if (!GetUserNameW(username, &size)) {
+        return JS_ThrowInternalError(ctx, "Failed to get username");
+    }
+
+    char *utf8_username = wstr_to_utf8(ctx, username);
+    if (!utf8_username) {
+        return JS_ThrowInternalError(ctx, "Failed to convert username to UTF-8");
+    }
+
+    JSValue result = JS_NewString(ctx, utf8_username);
+    js_free(ctx, utf8_username);
+    return result;
+}
+
+// shell: get current shell name
+static JSValue shell(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv){
+    // on windows
+    return JS_UNDEFINED;
+}
 
 
 static const JSCFunctionListEntry bindings_funcs[] = {
@@ -462,6 +705,20 @@ static const JSCFunctionListEntry bindings_funcs[] = {
     JS_CFUNC_DEF("umask", 0, js_umask),
     JS_CFUNC_DEF("argv", 0, js_argv),
     JS_CFUNC_DEF("kill", 0, js_kill),
+    JS_CFUNC_DEF("endianness", 0, endianness),
+    JS_CFUNC_DEF("freemem", 0, freemem),
+    JS_CFUNC_DEF("homedir", 0, homedir),
+    JS_CFUNC_DEF("hostname", 0, hostname),
+    JS_CFUNC_DEF("osRelease", 0, osRelease),
+    JS_CFUNC_DEF("tmpdir", 0, tmpdir),
+    JS_CFUNC_DEF("totalmem", 0, totalmem),
+    JS_CFUNC_DEF("osType", 0, osType),
+    JS_CFUNC_DEF("osVersion", 0, osVersion),
+    JS_CFUNC_DEF("osMachine", 0, osMachine),
+    JS_CFUNC_DEF("uid", 0, uid),
+    JS_CFUNC_DEF("gid", 0, gid),
+    JS_CFUNC_DEF("username", 0, username),
+    JS_CFUNC_DEF("shell", 0, shell),
 };
 
 static int bindings_module_init(JSContext *ctx, JSModuleDef *m) {

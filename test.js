@@ -9,4 +9,4 @@
 
 // console.log(require('./lib/iconv-lite.js'))
 
-console.log(require('assert/strict'))
+console.log(require('os').machine())
