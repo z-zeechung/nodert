@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     js_init_bindings(ctx, "bindings");
 
     FILE *file = fopen("lib/main.js", "r");
-    char script[1024*5];
+    char script[1024*32];
     size_t bytes_read = fread(script, 1, sizeof(script)-1, file);
     fclose(file);
     script[bytes_read] = '\0';  // important
