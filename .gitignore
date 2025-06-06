@@ -1,8 +1,10 @@
 node_modules
 /.vscode
 /libqjs
-/node
 /quickjs
+/libuv
+/uv
+/node
 *.exe
 *.obj
 /src/resource.res

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <quickjs.h>
 #include <quickjs-libc.h>
+#include <uv.h>
 #include "bindings.h"
 #include "resource.h"
 #include "global.h"
@@ -25,6 +26,39 @@ static void print_js_error(JSContext *ctx, JSValue error) {
     JS_FreeValue(ctx, stack_val);
 }
 
+// taken from quickjs-libc.c
+/* main loop which calls the user JS callbacks */
+int nodert_loop(JSContext *ctx, uv_loop_t *loop)
+{
+    JSRuntime *rt = JS_GetRuntime(ctx);
+    // JSThreadState *ts = js_get_thread_state(rt);     // seems that we'd have to give up qjs:os... alright, i admit it
+    JSContext *ctx1;
+    int err;
+
+    for(;;) {
+        /* execute the pending jobs */
+        for(;;) {
+            err = JS_ExecutePendingJob(JS_GetRuntime(ctx), &ctx1);
+            if (err <= 0) {
+                if (err < 0)
+                    goto done;
+                break;
+            }
+        }
+
+        // if (!ts->can_js_os_poll || js_os_poll(ctx))
+        //     break;
+
+        uv_run(loop, UV_RUN_NOWAIT);    // we'll use libuv instead
+
+        if(!JS_IsJobPending(rt)) {
+            break;
+        }
+    }
+done:
+    return JS_HasException(ctx);
+}
+
 int main(int argc, char *argv[]) {
 
     p_argc = argc;
@@ -34,12 +68,12 @@ int main(int argc, char *argv[]) {
     JS_SetHostPromiseRejectionTracker(rt, js_std_promise_rejection_tracker, NULL);
     JSContext *ctx = JS_NewContext(rt);
 
+    uv_loop_t *loop = uv_default_loop();
+
     js_std_add_helpers(ctx, argc, argv);
     js_std_init_handlers(rt);
 
     js_init_module_std(ctx, "qjs:std");
-    js_init_module_os(ctx, "qjs:os");
-    // js_init_module_bjson(ctx, "qjs:bjson");
 
     js_init_bindings(ctx, "bindings");
 
@@ -52,7 +86,7 @@ int main(int argc, char *argv[]) {
     char* init_bindings_script = load_utf8_resource_file(IDR_INIT_BINDINGS);
     JS_Eval(ctx, init_bindings_script, strlen(init_bindings_script), "<init_bindings>", JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_STRICT | JS_EVAL_TYPE_MODULE);
 
-    JSValue result = JS_Eval(ctx, script, strlen(script), "<internal>", JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_ASYNC | JS_EVAL_TYPE_MODULE);
+    JSValue result = JS_Eval(ctx, script, strlen(script), "<internal>", JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_STRICT | JS_EVAL_TYPE_MODULE);
 
     int ret = 0;
     if (JS_IsException(result)) {
@@ -61,18 +95,13 @@ int main(int argc, char *argv[]) {
         JS_FreeValue(ctx, exception);
         ret = -1;
     } else {
-        js_std_loop(ctx);
-        
-        JSValue global_obj = JS_GetGlobalObject(ctx);
-        JSValue promise = JS_GetPropertyStr(ctx, global_obj, "Promise");
-        if (JS_IsException(promise)) {
+        int result = nodert_loop(ctx, loop);
+        if (result != 0) {
             JSValue exception = JS_GetException(ctx);
             print_js_error(ctx, exception);
             JS_FreeValue(ctx, exception);
             ret = -1;
         }
-        JS_FreeValue(ctx, promise);
-        JS_FreeValue(ctx, global_obj);
     }
 
     JS_FreeValue(ctx, result);
