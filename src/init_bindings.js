@@ -1,9 +1,20 @@
 
 import * as qstd from 'qjs:std';
 import * as bindings from 'bindings'
+import * as timers from 'timers'
 
 
-globalThis.bindings = bindings
+globalThis.bindings = {
+    ...bindings,
+    nextTick: timers.nextTick,
+}
+
+globalThis.setInterval = timers.setInterval
+globalThis.setTimeout = timers.setTimeout
+globalThis.clearInterval = timers.clearInterval
+globalThis.clearTimeout = timers.clearTimeout
+globalThis.setImmediate = timers.setImmediate
+globalThis.clearImmediate = timers.clearImmediate
 
 
 const mapping = {

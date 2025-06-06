@@ -10,8 +10,8 @@ RFLAGS = /utf-8 /n
 
 all: nodert.exe
 
-nodert.exe: bindings.obj nodert.obj qjs-libc.obj resource.res
-	$(LINK) src/bindings.obj src/nodert.obj libqjs/Release/qjs.lib libuv/Release/libuv.lib src/qjs-libc.obj src/resource.res $(LDFLAGS) /OUT:nodert.exe
+nodert.exe: bindings.obj timers.obj nodert.obj qjs-libc.obj resource.res
+	$(LINK) src/bindings.obj src/timers.obj src/nodert.obj libqjs/Release/qjs.lib libuv/Release/libuv.lib src/qjs-libc.obj src/resource.res $(LDFLAGS) /OUT:nodert.exe
 
 nodert.obj:
 	$(CC) src/nodert.c $(CFLAGS) /c /Fo:src/nodert.obj
@@ -21,6 +21,9 @@ qjs-libc.obj:
 
 bindings.obj:
 	$(CC) src/bindings.c $(CFLAGS) /c /Fo:src/bindings.obj
+
+timers.obj:
+	$(CC) src/timers.c $(CFLAGS) /c /Fo:src/timers.obj
 
 resource.res:
 	$(RC) $(RFLAGS) /fo "src/resource.res" "src/resource.rc"

@@ -3,6 +3,7 @@
 #include <quickjs-libc.h>
 #include <uv.h>
 #include "bindings.h"
+#include "timers.h"
 #include "resource.h"
 #include "global.h"
 
@@ -51,7 +52,7 @@ int nodert_loop(JSContext *ctx, uv_loop_t *loop)
 
         uv_run(loop, UV_RUN_NOWAIT);    // we'll use libuv instead
 
-        if(!JS_IsJobPending(rt)) {
+        if(!JS_IsJobPending(rt) && uv_loop_alive(loop) == 0) {
             break;
         }
     }
@@ -76,6 +77,7 @@ int main(int argc, char *argv[]) {
     js_init_module_std(ctx, "qjs:std");
 
     js_init_bindings(ctx, "bindings");
+    js_init_timers_bindings(ctx, "timers");
 
     FILE *file = fopen("lib/main.js", "r");
     char script[1024*32];
