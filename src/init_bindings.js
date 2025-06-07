@@ -7,7 +7,15 @@ import {nextTick} from 'nextTick'
 
 globalThis.bindings = {
     ...bindings,
-    nextTick
+    nextTick: (cb, ...args)=>{
+        if(typeof cb !== 'function'){
+            throw new Error('cb must be a function')
+        }
+        const cbWithArgs = ()=>{
+            cb(...args)
+        }
+        return nextTick(cbWithArgs)
+    }
 }
 
 globalThis.setInterval = (cb, delay, ...args)=>{
