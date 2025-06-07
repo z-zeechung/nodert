@@ -2,19 +2,61 @@
 import * as qstd from 'qjs:std';
 import * as bindings from 'bindings'
 import * as timers from 'timers'
+import {nextTick} from 'nextTick'
 
 
 globalThis.bindings = {
     ...bindings,
-    nextTick: timers.nextTick,
+    nextTick
 }
 
-globalThis.setInterval = timers.setInterval
-globalThis.setTimeout = timers.setTimeout
-globalThis.clearInterval = timers.clearInterval
-globalThis.clearTimeout = timers.clearTimeout
-globalThis.setImmediate = timers.setImmediate
-globalThis.clearImmediate = timers.clearImmediate
+globalThis.setInterval = (cb, delay, ...args)=>{
+    if(typeof cb !== 'function'){
+        throw new Error('cb must be a function')
+    }
+    delay = Math.max(1, Math.round(delay))
+    const cbWithArgs = ()=>{
+        cb(...args)
+    }
+    return timers.setInterval(cbWithArgs, delay)
+}
+globalThis.setTimeout = (cb, delay, ...args)=>{
+    if(typeof cb !== 'function'){
+        throw new Error('cb must be a function')
+    }
+    delay = Math.max(1, Math.round(delay))
+    const cbWithArgs = ()=>{
+        cb(...args)
+    }
+    return timers.setTimeout(cbWithArgs, delay)
+}
+globalThis.clearInterval = (id)=>{
+    if(typeof id !== 'number'){
+        throw new Error('id must be a number')
+    }
+    timers.clearInterval(id)
+}
+globalThis.clearTimeout = (id)=>{
+    if(typeof id !== 'number'){
+        throw new Error('id must be a number')
+    }
+    timers.clearTimeout(id)
+}
+globalThis.setImmediate = (cb, ...args)=>{
+    if(typeof cb !== 'function'){
+        throw new Error('cb must be a function')
+    }
+    const cbWithArgs = ()=>{
+        cb(...args)
+    }
+    return timers.setImmediate(cbWithArgs)
+}
+globalThis.clearImmediate = (id)=>{
+    if(typeof id !== 'number'){
+        throw new Error('id must be a number')
+    }
+    timers.clearImmediate(id)
+}
 
 
 const mapping = {

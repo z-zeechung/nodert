@@ -6,6 +6,7 @@
 #include "timers.h"
 #include "resource.h"
 #include "global.h"
+#include "nextTick.h"
 
 int p_argc;
 char **p_argv;
@@ -37,6 +38,12 @@ int nodert_loop(JSContext *ctx, uv_loop_t *loop)
     int err;
 
     for(;;) {
+
+        // exec pending nextTick jobs
+        if(hasPendingNextTickJob){
+            executeNextTickJobs(ctx);
+        }
+
         /* execute the pending jobs */
         for(;;) {
             err = JS_ExecutePendingJob(JS_GetRuntime(ctx), &ctx1);
@@ -52,7 +59,7 @@ int nodert_loop(JSContext *ctx, uv_loop_t *loop)
 
         uv_run(loop, UV_RUN_NOWAIT);    // we'll use libuv instead
 
-        if(!JS_IsJobPending(rt) && uv_loop_alive(loop) == 0) {
+        if(!JS_IsJobPending(rt) && uv_loop_alive(loop) == 0 && (!hasPendingNextTickJob)) {
             break;
         }
     }
@@ -78,6 +85,7 @@ int main(int argc, char *argv[]) {
 
     js_init_bindings(ctx, "bindings");
     js_init_timers_bindings(ctx, "timers");
+    js_init_nextTick(ctx, "nextTick");
 
     FILE *file = fopen("lib/main.js", "r");
     char script[1024*32];
@@ -108,6 +116,7 @@ int main(int argc, char *argv[]) {
 
     JS_FreeValue(ctx, result);
     js_std_free_handlers(rt);
+    freeNextTickJobQueue(ctx);
     JS_FreeContext(ctx);
     JS_FreeRuntime(rt);
 

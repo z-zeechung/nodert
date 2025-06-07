@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-void js_init_timers_bindings(JSContext *ctx, const char *module_name);
+JSModuleDef *js_init_timers_bindings(JSContext *ctx, const char *module_name);
 
 #ifdef __cplusplus
 }

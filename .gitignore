@@ -4,6 +4,7 @@ node_modules
 /quickjs
 /libuv
 /uv
+/uvw
 /node
 *.exe
 *.obj
