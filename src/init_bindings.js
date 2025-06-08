@@ -3,6 +3,7 @@ import * as qstd from 'qjs:std';
 import * as bindings from 'bindings'
 import * as timers from 'timers'
 import {nextTick} from 'nextTick'
+import * as fs from 'fs'
 
 
 globalThis.bindings = {
@@ -15,6 +16,10 @@ globalThis.bindings = {
             cb(...args)
         }
         return nextTick(cbWithArgs)
+    },
+    fs: {
+        ...fs,
+        constants: fs.constants(),
     }
 }
 
@@ -78,6 +83,7 @@ const mapping = {
     'diagnostics_channel': 'diagnostics_channel.corelib.js',
     'domain': 'domain.corelib.js',
     'events': 'events.corelib.js',
+    'fs': 'fs.js',
     'os': 'os.corelib.js',
     'path': 'path.corelib.js',
         'path/posix': 'path.posix.js',

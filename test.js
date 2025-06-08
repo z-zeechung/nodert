@@ -2,13 +2,5 @@
 
 // console.log(internalBinding('types'));
 
-// console.log(Buffer)
-
-// console.log(Object.keys(process))
-// console.log(process.mainModule)
-
-// console.log(require('./lib/iconv-lite.js'))
-
-// console.log(require('os').machine())
-
-console.log(Object.keys(require('util').types))
+const fs = require('fs');
+console.log(fs.constants);

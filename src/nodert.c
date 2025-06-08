@@ -57,7 +57,7 @@ int nodert_loop(JSContext *ctx, uv_loop_t *loop)
         // if (!ts->can_js_os_poll || js_os_poll(ctx))
         //     break;
 
-        uv_run(loop, UV_RUN_NOWAIT);    // we'll use libuv instead
+        int status = uv_run(loop, UV_RUN_NOWAIT);    // we'll use libuv after all
 
         if(!JS_IsJobPending(rt) && uv_loop_alive(loop) == 0 && (!hasPendingNextTickJob)) {
             break;
@@ -86,6 +86,7 @@ int main(int argc, char *argv[]) {
     js_init_bindings(ctx, "bindings");
     js_init_timers_bindings(ctx, "timers");
     js_init_nextTick(ctx, "nextTick");
+    js_init_fs_bindings(ctx, "fs");
 
     FILE *file = fopen("lib/main.js", "r");
     char script[1024*32];
