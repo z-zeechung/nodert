@@ -3,10 +3,10 @@
 #include <quickjs-libc.h>
 #include <uv.h>
 #include "bindings.h"
-#include "timers.h"
+// #include "timers.h"
 #include "resource.h"
 #include "global.h"
-#include "nextTick.h"
+// #include "nextTick.h"
 
 int p_argc;
 char **p_argv;
@@ -40,9 +40,9 @@ int nodert_loop(JSContext *ctx, uv_loop_t *loop)
     for(;;) {
 
         // exec pending nextTick jobs
-        if(hasPendingNextTickJob){
-            executeNextTickJobs(ctx);
-        }
+        // if(hasPendingNextTickJob){
+        //     executeNextTickJobs(ctx);
+        // }
 
         /* execute the pending jobs */
         for(;;) {
@@ -59,7 +59,7 @@ int nodert_loop(JSContext *ctx, uv_loop_t *loop)
 
         int status = uv_run(loop, UV_RUN_NOWAIT);    // we'll use libuv after all
 
-        if(!JS_IsJobPending(rt) && uv_loop_alive(loop) == 0 && (!hasPendingNextTickJob)) {
+        if(!JS_IsJobPending(rt) && uv_loop_alive(loop) == 0 /*&& (!hasPendingNextTickJob)*/) {
             break;
         }
     }
@@ -84,9 +84,9 @@ int main(int argc, char *argv[]) {
     js_init_module_std(ctx, "qjs:std");
 
     js_init_bindings(ctx, "bindings");
-    js_init_timers_bindings(ctx, "timers");
-    js_init_nextTick(ctx, "nextTick");
-    js_init_fs_bindings(ctx, "fs");
+    // js_init_timers_bindings(ctx, "timers");
+    // js_init_nextTick(ctx, "nextTick");
+    // js_init_fs_bindings(ctx, "fs");
 
     FILE *file = fopen("lib/main.js", "r");
     char script[1024*32];
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
 
     JS_FreeValue(ctx, result);
     js_std_free_handlers(rt);
-    freeNextTickJobQueue(ctx);
+    // freeNextTickJobQueue(ctx);
     JS_FreeContext(ctx);
     JS_FreeRuntime(rt);
 

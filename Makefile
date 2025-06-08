@@ -13,8 +13,10 @@ RFLAGS = /utf-8 /n
 
 all: nodert.exe
 
-nodert.exe: bindings.obj nextTick.obj timers.obj fs.obj nodert.obj qjs-libc.obj resource.res
-	$(LINK) src/bindings.obj src/nextTick.obj src/timers.obj src/fs.obj src/nodert.obj libqjs/Release/qjs.lib libuv/Release/libuv.lib src/qjs-libc.obj src/resource.res $(LDFLAGS) /OUT:nodert.exe
+# nodert.exe: bindings.obj nextTick.obj timers.obj fs.obj nodert.obj qjs-libc.obj resource.res
+nodert.exe: bindings.obj nodert.obj qjs-libc.obj resource.res
+# 	$(LINK) src/bindings.obj src/nextTick.obj src/timers.obj src/fs.obj src/nodert.obj libqjs/Release/qjs.lib libuv/Release/libuv.lib src/qjs-libc.obj src/resource.res $(LDFLAGS) /OUT:nodert.exe
+	$(LINK) src/bindings.obj src/nodert.obj libqjs/Release/qjs.lib libuv/Release/libuv.lib src/qjs-libc.obj src/resource.res $(LDFLAGS) /OUT:nodert.exe
 
 nodert.obj:
 	$(CC) src/nodert.c $(CFLAGS) /c /Fo:src/nodert.obj
@@ -25,14 +27,14 @@ qjs-libc.obj:
 bindings.obj:
 	$(CC) src/bindings.c $(CFLAGS) /c /Fo:src/bindings.obj
 
-nextTick.obj:
-	$(CC) src/nextTick.c $(CFLAGS) /c /Fo:src/nextTick.obj
+# nextTick.obj:
+# 	$(CC) src/nextTick.c $(CFLAGS) /c /Fo:src/nextTick.obj
 
-timers.obj:
-	$(CXX) src/timers.cpp $(CXXFLAGS) /c /Fo:src/timers.obj
+# timers.obj:
+# 	$(CXX) src/timers.cpp $(CXXFLAGS) /c /Fo:src/timers.obj
 
-fs.obj:
-	$(CXX) src/fs.cpp $(CXXFLAGS) /c /Fo:src/fs.obj
+# fs.obj:
+# 	$(CXX) src/fs.cpp $(CXXFLAGS) /c /Fo:src/fs.obj
 
 resource.res:
 	$(RC) $(RFLAGS) /fo "src/resource.res" "src/resource.rc"

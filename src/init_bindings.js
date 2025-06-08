@@ -1,75 +1,75 @@
 
 import * as qstd from 'qjs:std';
 import * as bindings from 'bindings'
-import * as timers from 'timers'
-import {nextTick} from 'nextTick'
-import * as fs from 'fs'
+// import * as timers from 'timers'
+// import {nextTick} from 'nextTick'
+// import * as fs from 'fs'
 
 
 globalThis.bindings = {
     ...bindings,
-    nextTick: (cb, ...args)=>{
-        if(typeof cb !== 'function'){
-            throw new Error('cb must be a function')
-        }
-        const cbWithArgs = ()=>{
-            cb(...args)
-        }
-        return nextTick(cbWithArgs)
-    },
-    fs: {
-        ...fs,
-        constants: fs.constants(),
-    }
+    // nextTick: (cb, ...args)=>{
+    //     if(typeof cb !== 'function'){
+    //         throw new Error('cb must be a function')
+    //     }
+    //     const cbWithArgs = ()=>{
+    //         cb(...args)
+    //     }
+    //     return nextTick(cbWithArgs)
+    // },
+    // fs: {
+    //     ...fs,
+    //     constants: fs.constants(),
+    // }
 }
 
-globalThis.setInterval = (cb, delay, ...args)=>{
-    if(typeof cb !== 'function'){
-        throw new Error('cb must be a function')
-    }
-    delay = Math.max(1, Math.round(delay))
-    const cbWithArgs = ()=>{
-        cb(...args)
-    }
-    return timers.setInterval(cbWithArgs, delay)
-}
-globalThis.setTimeout = (cb, delay, ...args)=>{
-    if(typeof cb !== 'function'){
-        throw new Error('cb must be a function')
-    }
-    delay = Math.max(1, Math.round(delay))
-    const cbWithArgs = ()=>{
-        cb(...args)
-    }
-    return timers.setTimeout(cbWithArgs, delay)
-}
-globalThis.clearInterval = (id)=>{
-    if(typeof id !== 'number'){
-        throw new Error('id must be a number')
-    }
-    timers.clearInterval(id)
-}
-globalThis.clearTimeout = (id)=>{
-    if(typeof id !== 'number'){
-        throw new Error('id must be a number')
-    }
-    timers.clearTimeout(id)
-}
-globalThis.setImmediate = (cb, ...args)=>{
-    if(typeof cb !== 'function'){
-        throw new Error('cb must be a function')
-    }
-    const cbWithArgs = ()=>{
-        cb(...args)
-    }
-    return timers.setImmediate(cbWithArgs)
-}
-globalThis.clearImmediate = (id)=>{
-    if(typeof id !== 'number'){
-        throw new Error('id must be a number')
-    }
-    timers.clearImmediate(id)
-}
+// globalThis.setInterval = (cb, delay, ...args)=>{
+//     if(typeof cb !== 'function'){
+//         throw new Error('cb must be a function')
+//     }
+//     delay = Math.max(1, Math.round(delay))
+//     const cbWithArgs = ()=>{
+//         cb(...args)
+//     }
+//     return timers.setInterval(cbWithArgs, delay)
+// }
+// globalThis.setTimeout = (cb, delay, ...args)=>{
+//     if(typeof cb !== 'function'){
+//         throw new Error('cb must be a function')
+//     }
+//     delay = Math.max(1, Math.round(delay))
+//     const cbWithArgs = ()=>{
+//         cb(...args)
+//     }
+//     return timers.setTimeout(cbWithArgs, delay)
+// }
+// globalThis.clearInterval = (id)=>{
+//     if(typeof id !== 'number'){
+//         throw new Error('id must be a number')
+//     }
+//     timers.clearInterval(id)
+// }
+// globalThis.clearTimeout = (id)=>{
+//     if(typeof id !== 'number'){
+//         throw new Error('id must be a number')
+//     }
+//     timers.clearTimeout(id)
+// }
+// globalThis.setImmediate = (cb, ...args)=>{
+//     if(typeof cb !== 'function'){
+//         throw new Error('cb must be a function')
+//     }
+//     const cbWithArgs = ()=>{
+//         cb(...args)
+//     }
+//     return timers.setImmediate(cbWithArgs)
+// }
+// globalThis.clearImmediate = (id)=>{
+//     if(typeof id !== 'number'){
+//         throw new Error('id must be a number')
+//     }
+//     timers.clearImmediate(id)
+// }
 
 
 const mapping = {
