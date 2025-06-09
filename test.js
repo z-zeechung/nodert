@@ -1,6 +1,6 @@
-// const { internalBinding } = require('internal/test/binding');
+const { internalBinding } = require('internal/test/binding');
 
-// console.log(internalBinding('types'));
+console.log(internalBinding('fs_dir'));
 
-const fs = require('fs');
-console.log(fs.constants);
+// const fs = require('fs');
+// console.log(fs.constants);

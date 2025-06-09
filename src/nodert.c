@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <quickjs.h>
 #include <quickjs-libc.h>
-#include <uv.h>
+// #include <uv.h>
 #include "bindings.h"
 // #include "timers.h"
 #include "resource.h"
@@ -30,7 +30,7 @@ static void print_js_error(JSContext *ctx, JSValue error) {
 
 // taken from quickjs-libc.c
 /* main loop which calls the user JS callbacks */
-int nodert_loop(JSContext *ctx, uv_loop_t *loop)
+int nodert_loop(JSContext *ctx/*, uv_loop_t *loop*/)
 {
     JSRuntime *rt = JS_GetRuntime(ctx);
     // JSThreadState *ts = js_get_thread_state(rt);     // seems that we'd have to give up qjs:os... alright, i admit it
@@ -57,9 +57,9 @@ int nodert_loop(JSContext *ctx, uv_loop_t *loop)
         // if (!ts->can_js_os_poll || js_os_poll(ctx))
         //     break;
 
-        int status = uv_run(loop, UV_RUN_NOWAIT);    // we'll use libuv after all
+        // int status = uv_run(loop, UV_RUN_NOWAIT);    // we'll use libuv after all
 
-        if(!JS_IsJobPending(rt) && uv_loop_alive(loop) == 0 /*&& (!hasPendingNextTickJob)*/) {
+        if(!JS_IsJobPending(rt) /*&& uv_loop_alive(loop) == 0 && (!hasPendingNextTickJob)*/) {
             break;
         }
     }
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
     JS_SetHostPromiseRejectionTracker(rt, js_std_promise_rejection_tracker, NULL);
     JSContext *ctx = JS_NewContext(rt);
 
-    uv_loop_t *loop = uv_default_loop();
+    // uv_loop_t *loop = uv_default_loop();
 
     js_std_add_helpers(ctx, argc, argv);
     js_std_init_handlers(rt);
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
         JS_FreeValue(ctx, exception);
         ret = -1;
     } else {
-        int result = nodert_loop(ctx, loop);
+        int result = nodert_loop(ctx/*, loop*/);
         if (result != 0) {
             JSValue exception = JS_GetException(ctx);
             print_js_error(ctx, exception);

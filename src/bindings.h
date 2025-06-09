@@ -3,7 +3,7 @@
 
 #include <quickjs.h>
 #include <quickjs-libc.h>
-#include <uv.h>
+// #include <uv.h>
 #include "global.h"
 
 #ifdef __cplusplus
