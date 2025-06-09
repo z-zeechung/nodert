@@ -1,4 +1,5 @@
 const { DOMException: OriginalDOMException } = require('w3c-domcore-errors.js');
+const uvErrorMap = require('uv_errmap.json');
 
 function DOMException(message, name) {
   if (arguments.length === 1) {
@@ -73,7 +74,13 @@ module.exports = (name)=>{
             ]
         }
         case 'uv': return {
-            getErrorMap: require('util').getSystemErrorMap
+            getErrorMap: ()=>{
+              let map = new Map()
+              for(let code in uvErrorMap) {
+                map.set(Number.parseInt(code), uvErrorMap[code])
+              }
+              return map
+            }
         }
         case 'messaging': return {
             DOMException

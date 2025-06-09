@@ -10,6 +10,8 @@
 #include <io.h>
 #include <shlobj.h>
 #include <lmcons.h>
+#include <signal.h>
+#include <sys/stat.h>
 static wchar_t* utf8_to_wchar(const char* utf8) {
     if (!utf8) return NULL;
 
@@ -686,6 +688,125 @@ static JSValue shell(JSContext *ctx, JSValueConst this_val, int argc, JSValueCon
     return JS_UNDEFINED;
 }
 
+// osConstants
+static JSValue osConstants(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv){
+    JSValue dlopen = JS_NewObject(ctx);
+
+    JSValue errnum = JS_NewObject(ctx);
+    #define C(name) JS_SetPropertyStr(ctx, errnum, #name, JS_NewInt64(ctx, name))
+    C(E2BIG); C(EACCES); C(EADDRINUSE); C(EADDRNOTAVAIL); C(EAFNOSUPPORT); C(EAGAIN); C(EALREADY); 
+    C(EBADF); C(EBADMSG); C(EBUSY); C(ECANCELED); C(ECHILD); C(ECONNABORTED); C(ECONNREFUSED); 
+    C(ECONNRESET); C(EDEADLK); C(EDESTADDRREQ); C(EDOM); C(EEXIST); C(EFAULT); C(EFBIG); C(EHOSTUNREACH); 
+    C(EIDRM); C(EILSEQ); C(EINPROGRESS); C(EINTR); C(EINVAL); C(EIO); C(EISCONN); C(EISDIR); C(ELOOP); 
+    C(EMFILE); C(EMLINK); C(EMSGSIZE); C(ENAMETOOLONG); C(ENETDOWN); C(ENETRESET); C(ENETUNREACH); 
+    C(ENFILE); C(ENOBUFS); C(ENODATA); C(ENODEV); C(ENOENT); C(ENOEXEC); C(ENOLCK); C(ENOLINK); C(ENOMEM); 
+    C(ENOMSG); C(ENOPROTOOPT); C(ENOSPC); C(ENOSR); C(ENOSTR); C(ENOSYS); C(ENOTCONN); C(ENOTDIR); 
+    C(ENOTEMPTY); C(ENOTSOCK); C(ENOTSUP); C(ENOTTY); C(ENXIO); C(EOPNOTSUPP); C(EOVERFLOW); C(EPERM); 
+    C(EPIPE); C(EPROTO); C(EPROTONOSUPPORT); C(EPROTOTYPE); C(ERANGE); C(EROFS); C(ESPIPE); C(ESRCH); 
+    C(ETIME); C(ETIMEDOUT); C(ETXTBSY); C(EWOULDBLOCK); C(EXDEV); C(WSAEINTR); C(WSAEBADF); C(WSAEACCES); 
+    C(WSAEFAULT); C(WSAEINVAL); C(WSAEMFILE); C(WSAEWOULDBLOCK); C(WSAEINPROGRESS); C(WSAEALREADY); 
+    C(WSAENOTSOCK); C(WSAEDESTADDRREQ); C(WSAEMSGSIZE); C(WSAEPROTOTYPE); C(WSAENOPROTOOPT); C(WSAEPROTONOSUPPORT); 
+    C(WSAESOCKTNOSUPPORT); C(WSAEOPNOTSUPP); C(WSAEPFNOSUPPORT); C(WSAEAFNOSUPPORT); C(WSAEADDRINUSE); 
+    C(WSAEADDRNOTAVAIL); C(WSAENETDOWN); C(WSAENETUNREACH); C(WSAENETRESET); C(WSAECONNABORTED); 
+    C(WSAECONNRESET); C(WSAENOBUFS); C(WSAEISCONN); C(WSAENOTCONN); C(WSAESHUTDOWN); C(WSAETOOMANYREFS); 
+    C(WSAETIMEDOUT); C(WSAECONNREFUSED); C(WSAELOOP); C(WSAENAMETOOLONG); C(WSAEHOSTDOWN); C(WSAEHOSTUNREACH); 
+    C(WSAENOTEMPTY); C(WSAEPROCLIM); C(WSAEUSERS); C(WSAEDQUOT); C(WSAESTALE); C(WSAEREMOTE); 
+    C(WSASYSNOTREADY); C(WSAVERNOTSUPPORTED); C(WSANOTINITIALISED); C(WSAEDISCON); C(WSAENOMORE); 
+    C(WSAECANCELLED); C(WSAEINVALIDPROCTABLE); C(WSAEINVALIDPROVIDER); C(WSAEPROVIDERFAILEDINIT); 
+    C(WSASYSCALLFAILURE); C(WSASERVICE_NOT_FOUND); C(WSATYPE_NOT_FOUND); C(WSA_E_NO_MORE); C(WSA_E_CANCELLED); C(WSAEREFUSED);
+
+    JSValue signals = JS_NewObject(ctx);
+    #define C(name) JS_SetPropertyStr(ctx, signals, #name, JS_NewInt64(ctx, name))
+    #ifdef _WIN32
+        #define SIGHUP 1
+        #define SIGQUIT 3
+        #define SIGKILL 9
+        #define SIGWINCH 28
+    #endif
+    C(SIGHUP); C(SIGINT); C(SIGQUIT); C(SIGILL); C(SIGABRT); C(SIGFPE); C(SIGKILL); C(SIGSEGV); C(SIGTERM); C(SIGBREAK); C(SIGWINCH);
+
+    JSValue priority = JS_NewObject(ctx);
+    #define C(name) JS_SetPropertyStr(ctx, priority, #name, JS_NewInt64(ctx, name))
+    #ifdef _WIN32
+        #define PRIORITY_LOW          THREAD_PRIORITY_LOWEST
+        #define PRIORITY_BELOW_NORMAL THREAD_PRIORITY_BELOW_NORMAL
+        #define PRIORITY_NORMAL       THREAD_PRIORITY_NORMAL
+        #define PRIORITY_ABOVE_NORMAL THREAD_PRIORITY_ABOVE_NORMAL
+        #define PRIORITY_HIGH         THREAD_PRIORITY_HIGHEST
+        #define PRIORITY_REALTIME     THREAD_PRIORITY_TIME_CRITICAL
+    #endif
+    C(PRIORITY_LOW); C(PRIORITY_BELOW_NORMAL); C(PRIORITY_NORMAL); C(PRIORITY_ABOVE_NORMAL); C(PRIORITY_HIGH); C(PRIORITY_REALTIME);
+
+    JSValue constants = JS_NewObject(ctx);
+    JS_SetPropertyStr(ctx, constants, "dlopen", dlopen);
+    JS_SetPropertyStr(ctx, constants, "errno", errnum);
+    JS_SetPropertyStr(ctx, constants, "signals", signals);
+    JS_SetPropertyStr(ctx, constants, "priority", priority);
+
+    return constants;
+
+    #undef C
+}
+
+// fsConstants
+static JSValue fsConstants(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    JSValue constants = JS_NewObject(ctx);
+    #define C(name) JS_SetPropertyStr(ctx, constants, #name, JS_NewInt32(ctx, name));
+    #ifdef _WIN32
+        #define O_RDONLY   _O_RDONLY
+        #define O_WRONLY   _O_WRONLY
+        #define O_RDWR     _O_RDWR
+        #define O_CREAT    _O_CREAT
+        #define O_EXCL     _O_EXCL
+        #define O_TRUNC    _O_TRUNC
+        #define O_APPEND   _O_APPEND
+
+        #define S_IFMT     _S_IFMT
+        #define S_IFREG    _S_IFREG
+        #define S_IFDIR    _S_IFDIR
+        #define S_IFCHR    _S_IFCHR
+        #define S_IFIFO    _S_IFIFO
+        #define S_IFLNK    0xA000
+        #define S_IRUSR    _S_IREAD
+        #define S_IWUSR    _S_IWRITE
+
+        #define F_OK 0  // aligned with `_access` mode flags in msvc <io.h>
+        #define R_OK 4
+        #define W_OK 2
+        #define X_OK 1
+    #endif
+    #define UV_FS_SYMLINK_DIR            1    // `UV_*` constants will be defined as the same code 
+    #define UV_FS_SYMLINK_JUNCTION       2    // in libuv, in case someone use hardcoded values in 
+    #define UV_DIRENT_UNKNOWN            0    // their js code
+    #define UV_DIRENT_FILE               1
+    #define UV_DIRENT_DIR                2
+    #define UV_DIRENT_LINK               3
+    #define UV_DIRENT_FIFO               4
+    #define UV_DIRENT_SOCKET             5
+    #define UV_DIRENT_CHAR               6
+    #define UV_DIRENT_BLOCK              7
+    #define UV_FS_O_FILEMAP              0x20000000
+    #define UV_FS_COPYFILE_EXCL          1
+    #define UV_FS_COPYFILE_FICLONE       2
+    #define UV_FS_COPYFILE_FICLONE_FORCE 4
+    #define COPYFILE_EXCL                UV_FS_COPYFILE_EXCL
+    #define COPYFILE_FICLONE             UV_FS_COPYFILE_FICLONE
+    #define COPYFILE_FICLONE_FORCE       UV_FS_COPYFILE_FICLONE_FORCE
+    C(O_RDONLY); C(O_WRONLY); C(O_RDWR); C(O_CREAT); C(O_EXCL); C(O_TRUNC); C(O_APPEND);
+    C(S_IFMT); C(S_IFREG); C(S_IFDIR); C(S_IFCHR); C(S_IFIFO); C(S_IFLNK); C(S_IRUSR); C(S_IWUSR);
+    C(F_OK); C(R_OK); C(W_OK); C(X_OK);
+    C(UV_FS_SYMLINK_DIR); C(UV_FS_SYMLINK_JUNCTION);
+    C(UV_DIRENT_UNKNOWN); C(UV_DIRENT_FILE); C(UV_DIRENT_DIR); C(UV_DIRENT_LINK); C(UV_DIRENT_FIFO);
+    C(UV_DIRENT_SOCKET); C(UV_DIRENT_CHAR); C(UV_DIRENT_BLOCK);
+    C(UV_FS_O_FILEMAP);
+    C(UV_FS_COPYFILE_EXCL); C(UV_FS_COPYFILE_FICLONE); C(UV_FS_COPYFILE_FICLONE_FORCE);
+    C(COPYFILE_EXCL); C(COPYFILE_FICLONE); C(COPYFILE_FICLONE_FORCE);
+
+    return constants;
+
+    #undef C
+}
+
 
 static const JSCFunctionListEntry bindings_funcs[] = {
     JS_CFUNC_DEF("arch", 0, arch),
@@ -719,6 +840,8 @@ static const JSCFunctionListEntry bindings_funcs[] = {
     JS_CFUNC_DEF("gid", 0, gid),
     JS_CFUNC_DEF("username", 0, username),
     JS_CFUNC_DEF("shell", 0, shell),
+    JS_CFUNC_DEF("osConstants", 0, osConstants),
+    JS_CFUNC_DEF("fsConstants", 0, fsConstants),
 };
 
 static int bindings_module_init(JSContext *ctx, JSModuleDef *m) {

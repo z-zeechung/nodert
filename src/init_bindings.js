@@ -76,6 +76,14 @@ const mapping = {
     'primordials': 'primordials.js',
     'process': 'process.js',
 
+    'internal/assert': 'internal/assert.js',
+    'internal/constants': 'internal/constants.js',
+    'internal/errors': 'internal/errors.js',
+    'internal/util': 'internal/util.js',
+    'internal/util/inspect': 'internal/util/inspect.js',
+    'internal/util/types': 'internal/util/types.js',
+    'internal/validators': 'internal/validators.js',
+
     'assert': 'assert.corelib.js',
         'assert/strict': 'assert.strict.js',
     'buffer': 'buffer.corelib.js',
@@ -84,7 +92,7 @@ const mapping = {
     'domain': 'domain.corelib.js',
     'events': 'events.corelib.js',
     'fs': 'fs.js',
-    'os': 'os.corelib.js',
+    'os': 'os.js',
     'path': 'path.corelib.js',
         'path/posix': 'path.posix.js',
         'path/win32': 'path.win32.js',

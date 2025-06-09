@@ -27,6 +27,8 @@ const config = {
         'internal/process/warning': 'shims/internal_util/process_warning.js',
         'internal/url': 'shims/internal_util/url.js',
 
+        'uv_errmap.json': 'shims/internal_util/uv_errmap.json',
+
         'w3c-domcore-errors.js': 'shims/w3c-domcore-errors-1.0.2/w3c-domcore-errors.js',
 
         'internalBinding': 'shims/internal_util/internalBindings.js'

@@ -1,9 +1,7 @@
 const { internalBinding } = require('internal/test/binding');
 
-// console.log(internalBinding('types'))
+console.log(internalBinding('uv').getErrorMap())
 
-const set = new Set();
-Array.from({length: 100000}).forEach((_, i) => set.add(i));
-console.log(set);
-
-// console.log(require('domexception'));
+// for(let name in require('os').constants.signals) {
+//     process.stdout.write(`C(${name}); `)
+// }
