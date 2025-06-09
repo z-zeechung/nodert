@@ -12,6 +12,7 @@ node_modules
 
 /shims/*-*
 /lib/*.corelib.js
+/lib/internal
 /lib/primordials.js
 
 /scripts/ciallorize_mask_*.*
