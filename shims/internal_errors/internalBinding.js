@@ -14,7 +14,7 @@ module.exports = (name)=>{
             }
         }
         case 'uv': return {
-            getErrorMap: require('util').getSystemErrorMap
+            getErrorMap: require('internal/util').getSystemErrorMap
         }
     }
 }

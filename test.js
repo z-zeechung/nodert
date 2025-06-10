@@ -1,7 +1,5 @@
 const { internalBinding } = require('internal/test/binding');
 
-console.log(internalBinding('uv').getErrorMap())
+// console.log(internalBinding('uv'))
 
-// for(let name in require('os').constants.signals) {
-//     process.stdout.write(`C(${name}); `)
-// }
+console.log(require('stream'))

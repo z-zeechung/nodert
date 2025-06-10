@@ -19,7 +19,6 @@ const config = {
     modules: ['.'],
     alias: {
         'internal/util/inspect': 'shims/internal_errors/inspect.js',
-        'internal/util/colors': 'node/lib/internal/util/colors.js',
         'internal/tty': 'node/lib/internal/tty.js',
         'internal/v8/startup_snapshot': 'shims/internal_errors/v8.js',
 
@@ -30,6 +29,7 @@ const config = {
       'internal/assert': 'commonjs internal/assert',
       'internal/util': 'commonjs internal/util',
       'internal/validators': 'commonjs internal/validators',
+      'internal/util/colors': 'commonjs internal/util/colors',
   },
   module: {
     rules: [
