@@ -3,53 +3,64 @@ const path = require("path");
 const fs = require("fs");
 
 const config = {
-  entry: "./shims/util/util.js",
+  entry: "./node/lib/util.js",
   output: {
-    filename: "util.corelib.js",
+    filename: "util.js",
     path: path.resolve('./lib'),
     libraryTarget: "umd",
   },
   target: 'node',
   mode: "production",
+  optimization: {
+    concatenateModules: false  // dotenv used some lib we don't currently support
+  },
   resolve: {
     modules: [
         '.',
-        'shims/node-util-0.12.4/node_modules'
+        'shims/dotenv-16.5.0/lib'
     ],
     alias: {
-      'node_util': 'shims/node-util-0.12.4/util.js',
-      'inherits': 'inherits/inherits_browser.js',
+        'internal/streams/utils': 'shims/util/stream_utils.js',
+        'internal/options': 'shims/util/options.js',
+        'internal/abort_controller': 'shims/util/abort_controller.js',
+        'internal/console/global': 'shims/util/global_console.js',
+        'internal/source_map/source_map_cache': 'shims/util/source_map.js',
+        'internal/util/comparisons': 'node/lib/internal/util/comparisons.js',
+        'internal/url': 'shims/util/url.js',
+        'internal/crypto/util': 'shims/util/crypto.js',
 
-      // 'internal/util/inspect': 'node/lib/internal/util/inspect.js',
-      //   'internal/util$': 'shims/util/internal.util.js',
-      //   'internal/errors': 'shims/util/errors.js',
-      //   'internal/util/types': 'node/lib/internal/util/types.js',
-      //     'internal/crypto/keys': 'shims/util/crypto.js',
-      //   'internal/assert': 'node/lib/internal/assert.js',
-      //     // 'internal/errors'
-      //   'internal/bootstrap/realm': 'shims/util/realm.js',
-      //   'internal/validators': 'shims/util/validators.js',
-      //   'internal/url': 'shims/util/internal.url.js',
+        'internalBinding': 'shims/util/internalBinding.js',
 
-      //   'internalBinding': 'shims/util/internalBinding.js'
+        'dotenv': 'shims/dotenv-16.5.0/lib/main.js',
+        'dotenv-expand': 'shims/dotenv-expand-12.0.2/lib/main.js',
     }
   },
-  // module: {
-  //     rules: [
-  //       {
-  //         test: /\.js$/,
-  //         exclude: [
-  //           path.resolve('./shims') 
-  //         ],
-  //         use: [
-  //           {
-  //             loader: path.resolve(__dirname, 'inject-internalBinding-loader.js'),
-  //           },
-  //         ],
-  //         enforce: 'pre',
-  //       },
-  //     ],
-  //   },
+  externals: {
+    'internal/errors': 'commonjs internal/errors',
+    'internal/util/inspect': 'commonjs internal/util/inspect',
+    'internal/util/debuglog': 'commonjs internal/util/debuglog',
+    'internal/validators': 'commonjs internal/validators',
+    'internal/util/types': 'commonjs internal/util/types',
+    'internal/util/colors': 'commonjs internal/util/colors',
+    'internal/util': 'commonjs internal/util',
+    'internal/assert': 'commonjs internal/assert',
+  },
+  module: {
+      rules: [
+        {
+          test: /\.js$/,
+          exclude: [
+            path.resolve('./shims') 
+          ],
+          use: [
+            {
+              loader: path.resolve(__dirname, 'inject-internalBinding-loader.js'),
+            },
+          ],
+          enforce: 'pre',
+        },
+      ],
+    },
 };
 
 webpack(config, (err, stats) => {
@@ -65,18 +76,4 @@ webpack(config, (err, stats) => {
       modules: false,
     })
   );
-
-  if(fs.existsSync('scripts/ciallorize_mask_util.png')){
-      const ciallorize = require('ciallorize')
-      ciallorize(
-        fs.readFileSync('./lib/util.corelib.js', 'utf8'),
-        'scripts/ciallorize_mask_util.png',
-        {
-          fontWidthToHeightRatio: 16/40,
-          characterCompensation: 0.9
-        }
-      ).then(result=>{
-        fs.writeFileSync('./lib/util.corelib.js', result, 'utf8')
-      })
-  }
 });

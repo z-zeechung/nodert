@@ -80,6 +80,8 @@ const mapping = {
     'internal/constants': 'internal/constants.js',
     'internal/errors': 'internal/errors.js',
     'internal/util': 'internal/util.js',
+    'internal/util/colors': 'internal/util/colors.js',
+    'internal/util/debuglog': 'internal/util/debuglog.js',
     'internal/util/inspect': 'internal/util/inspect.js',
     'internal/util/types': 'internal/util/types.js',
     'internal/validators': 'internal/validators.js',
@@ -88,6 +90,7 @@ const mapping = {
         'assert/strict': 'assert.strict.js',
     'buffer': 'buffer.corelib.js',
     'console': 'console.corelib.js',
+    'crypto': 'crypto.js',
     'diagnostics_channel': 'diagnostics_channel.corelib.js',
     'domain': 'domain.corelib.js',
     'events': 'events.corelib.js',
@@ -102,7 +105,8 @@ const mapping = {
     'string_decoder': 'string_decoder.corelib.js',
     'timers': 'timers.corelib.js',
     'url': 'url.corelib.js',
-    'util': 'util.corelib.js',
+    'util': 'util.js',
+    'vm': 'vm.js',
     'zlib': 'zlib.corelib.js',
 }
 
