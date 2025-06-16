@@ -60,8 +60,7 @@ module.exports = (name)=>{
                 throw new Error('guessHandleType is not implemented')
             },
             sleep(msec){
-                // TODO: implement
-                throw new Error('sleep is not implemented')
+                bindings.sleep(msec)
             }
         }
         case 'types': return require('internal/util/types')

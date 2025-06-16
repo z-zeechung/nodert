@@ -15,5 +15,6 @@ node_modules
 /lib/internal
 /lib/primordials.js
 /lib/util.js
+/lib/console.js
 
 /scripts/ciallorize_mask_*.*

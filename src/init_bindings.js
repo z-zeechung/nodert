@@ -89,7 +89,7 @@ const mapping = {
     'assert': 'assert.corelib.js',
         'assert/strict': 'assert.strict.js',
     'buffer': 'buffer.corelib.js',
-    'console': 'console.corelib.js',
+    'console': 'console.js',
     'crypto': 'crypto.js',
     'diagnostics_channel': 'diagnostics_channel.corelib.js',
     'domain': 'domain.corelib.js',

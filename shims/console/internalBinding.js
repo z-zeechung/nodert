@@ -10,13 +10,47 @@ module.exports = (binding)=>{
             }
         }
         case 'util': return {
-            previewEntries(data, forceKV){
-                /**
-                 * TODO: implement with C binding
-                 */
-                let entry, isKV;
-                return [entry, isKV]
-            }
+            previewEntries(...args){
+                const MAX_PREVIEW_LEN = 100;
+                if(args.length===0){
+                    return undefined
+                }
+                if(!(
+                    types.isMap(args[0]) ||
+                    types.isSet(args[0]) ||
+                    types.isMapIterator(args[0]) ||
+                    types.isSetIterator(args[0]) ||
+                    types.isWeakMap(args[0]) ||
+                    types.isWeakSet(args[0])
+                )){
+                    return undefined
+                }
+                let isMap = undefined
+                if(args.length>=2){
+                    isMap = types.isMap(args[0])         || 
+                            types.isMapIterator(args[0]) ||
+                            types.isWeakMap(args[0])
+                }
+                let ret = undefined
+                if(types.isMap(args[0])){
+                    ret = args[0].entries().slice(0,MAX_PREVIEW_LEN)
+                }else if(types.isSet(args[0])){
+                    ret = args[0].entries().slice(0,MAX_PREVIEW_LEN)
+                }else if(types.isMapIterator(args[0])){   // filled with dummy values
+                    ret = []                              // this sholud be enough, 
+                }else if(types.isSetIterator(args[0])){   // since this function only 
+                    ret = []                              // works for console api
+                }else if(types.isWeakMap(args[0])){
+                    ret = []
+                }else if(types.isWeakSet(args[0])){
+                    ret = []
+                }
+                if(isMap===undefined){
+                    return ret
+                }else{
+                    return [ret, isMap]
+                }
+            },
         }
         case 'config': return {
             hasInspector: false,     // if `true`, `internalBinding('inspector').console` will be called

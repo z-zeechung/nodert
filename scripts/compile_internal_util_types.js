@@ -22,11 +22,18 @@ const config = {
     concatenateModules: false
   },
   resolve: {
-    modules: ['.'],
+    modules: [
+      '.',
+      'shims/node-util-0.12.4/node_modules',
+      'shims/is-date-object-1.1.0/node_modules',
+    ],
     alias: {
         'internal/crypto/keys': 'shims/internal_util_types/crypto.js',
 
-        'internalBinding': 'shims/internal_util_types/internalBinding.js'
+        'internalBinding': 'shims/internal_util_types/internalBinding.js',
+
+        'types': 'shims/node-util-0.12.4/support/types.js',
+        'is-date': 'shims/is-date-object-1.1.0/index.js',
     }
   },
   module: {

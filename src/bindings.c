@@ -807,6 +807,54 @@ static JSValue fsConstants(JSContext *ctx, JSValueConst this_val, int argc, JSVa
     #undef C
 }
 
+// isExternal: check if an object is v8 external object. currently it's always false
+static JSValue isExternal(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    return JS_FALSE;
+}
+
+// isProxy
+static JSValue isProxy(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    return JS_IsProxy(argv[0]) ? JS_TRUE : JS_FALSE;
+}
+
+// isModuleNamespaceObject
+static JSValue isModuleNamespaceObject(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    return JS_FALSE;
+}
+
+// getProxyTarget
+static JSValue getProxyTarget(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    return JS_GetProxyTarget(ctx, argv[0]);
+}
+
+// getProxyHandler
+static JSValue getProxyHandler(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    return JS_GetProxyHandler(ctx, argv[0]);
+}
+
+// getPromiseState
+static JSValue getPromiseState(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    JSPromiseStateEnum state = JS_PromiseState(ctx, argv[0]);
+    if(state==JS_PROMISE_PENDING)
+        return JS_NewInt32(ctx, 0);
+    else if(state==JS_PROMISE_FULFILLED)
+        return JS_NewInt32(ctx, 1);
+    else if(state==JS_PROMISE_REJECTED)
+        return JS_NewInt32(ctx, 2);
+}
+
+// getPromiseResult
+static JSValue getPromiseResult(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    return JS_PromiseResult(ctx, argv[0]);
+}
+
+// sleep
+static JSValue js_sleep(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    DWORD ms; JS_ToInt64(ctx, &ms, argv[0]);
+    Sleep(ms);
+    return JS_UNDEFINED;
+}
+
 
 static const JSCFunctionListEntry bindings_funcs[] = {
     JS_CFUNC_DEF("arch", 0, arch),
@@ -842,6 +890,14 @@ static const JSCFunctionListEntry bindings_funcs[] = {
     JS_CFUNC_DEF("shell", 0, shell),
     JS_CFUNC_DEF("osConstants", 0, osConstants),
     JS_CFUNC_DEF("fsConstants", 0, fsConstants),
+    JS_CFUNC_DEF("isExternal", 0, isExternal),
+    JS_CFUNC_DEF("isProxy", 0, isProxy),
+    JS_CFUNC_DEF("isModuleNamespaceObject", 0, isModuleNamespaceObject),
+    JS_CFUNC_DEF("getProxyTarget", 0, getProxyTarget),
+    JS_CFUNC_DEF("getProxyHandler", 0, getProxyHandler),
+    JS_CFUNC_DEF("getPromiseState", 0, getPromiseState),
+    JS_CFUNC_DEF("getPromiseResult", 0, getPromiseResult),
+    JS_CFUNC_DEF("sleep", 0, js_sleep),
 };
 
 static int bindings_module_init(JSContext *ctx, JSModuleDef *m) {
