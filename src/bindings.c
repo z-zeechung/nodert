@@ -590,6 +590,11 @@ static JSValue totalmem(JSContext *ctx, JSValueConst this_val, int argc, JSValue
     return JS_NewInt64(ctx, memInfo.ullTotalPhys);
 }
 
+// uptime
+static JSValue uptime(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    return JS_NewInt64(ctx, GetTickCount64());
+}
+
 // osType
 static JSValue osType(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
     // fixed for win32
@@ -881,6 +886,7 @@ static const JSCFunctionListEntry bindings_funcs[] = {
     JS_CFUNC_DEF("osRelease", 0, osRelease),
     JS_CFUNC_DEF("tmpdir", 0, tmpdir),
     JS_CFUNC_DEF("totalmem", 0, totalmem),
+    JS_CFUNC_DEF("uptime", 0, uptime),
     JS_CFUNC_DEF("osType", 0, osType),
     JS_CFUNC_DEF("osVersion", 0, osVersion),
     JS_CFUNC_DEF("osMachine", 0, osMachine),
