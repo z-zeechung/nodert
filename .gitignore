@@ -13,9 +13,9 @@ node_modules
 /shims/*-*
 /lib/*.corelib.js
 /lib/internal
+/lib/deps
 /lib/primordials.js
 /lib/util.js
 /lib/console.js
 /lib/events.js
-
-/scripts/ciallorize_mask_*.*
+/lib/assert.js

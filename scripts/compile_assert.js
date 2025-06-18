@@ -3,19 +3,39 @@ const path = require("path");
 const fs = require("fs");
 
 const config = {
-  entry: "./shims/commonjs-assert-2.0.0/assert.js",
+  entry: "./node/lib/assert.js",
   output: {
-    filename: "assert.corelib.js",
+    filename: "assert.js",
     path: path.resolve('./lib'),
     libraryTarget: "umd",
   },
   target: 'node',
   mode: "production",
+  optimization: {
+    concatenateModules: false
+  },
   resolve: {
-    modules: [
-      'shims/commonjs-assert-2.0.0',
-      'shims/commonjs-assert-2.0.0/node_modules'
-    ]
+    modules: ['.'],
+    alias: {
+        'internal/assert/myers_diff': 'node/lib/internal/assert/myers_diff.js',
+        'internal/assert/assertion_error': 'node/lib/internal/assert/assertion_error.js',
+        'internal/bootstrap/realm': 'shims/assert/realm.js',
+        'internal/url': 'shims/assert/url.js',
+        'internal/deps/acorn/acorn/dist/acorn': 'shims/assert/acorn.js',
+        'internal/deps/acorn/acorn-walk/dist/walk': 'shims/assert/acorn-walk.js',
+    }
+  },
+  externals: {
+    'internal/util/comparisons': 'commonjs internal/util/comparisons',
+    'internal/util': 'commonjs internal/util',
+    'internal/util/types': 'commonjs internal/util/types',
+    'internal/util/inspect': 'commonjs internal/util/inspect',
+    'internal/util/colors': 'commonjs internal/util/colors',
+    'internal/validators': 'commonjs internal/validators',
+    'internal/errors': 'commonjs internal/errors',
+    'internal/constants': 'commonjs internal/constants',
+    'deps/acorn': 'commonjs deps/acorn',
+    'deps/acorn-walk': 'commonjs deps/acorn-walk',
   },
 };
 
@@ -32,20 +52,4 @@ webpack(config, (err, stats) => {
       modules: false,
     })
   );
-
-  fs.rmSync('lib/assert.corelib.js.LICENSE.txt')
-
-  if(fs.existsSync('scripts/ciallorize_mask_assert.png')){
-      const ciallorize = require('ciallorize')
-      ciallorize(
-        fs.readFileSync('./lib/assert.corelib.js', 'utf8').replaceAll('\n', ''),
-        'scripts/ciallorize_mask_assert.png',
-        {
-          fontWidthToHeightRatio: 16/40,
-          characterCompensation: 0.9
-        }
-      ).then(result=>{
-        fs.writeFileSync('./lib/assert.corelib.js', result, 'utf8')
-      })
-  }
 });
