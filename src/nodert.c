@@ -87,10 +87,9 @@ int main(int argc, char *argv[]) {
     js_std_init_handlers(rt);
 
     js_init_module_std(ctx, "qjs:std");
+    js_init_module_os(ctx, "qjs:os");
 
     js_init_bindings(ctx, "bindings");
-    // js_init_timers_bindings(ctx, "timers");
-    // js_init_nextTick(ctx, "nextTick");
     // js_init_fs_bindings(ctx, "fs");
 
     FILE *file = fopen("lib/main.js", "r");
@@ -111,7 +110,8 @@ int main(int argc, char *argv[]) {
         JS_FreeValue(ctx, exception);
         ret = -1;
     } else {
-        int result = nodert_loop(ctx/*, loop*/);
+        // int result = nodert_loop(ctx/*, loop*/);
+        int result = js_std_loop(ctx);
         if (result != 0) {
             JSValue exception = JS_GetException(ctx);
             print_js_error(ctx, exception);
