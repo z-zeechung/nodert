@@ -1,12 +1,10 @@
 #include <stdio.h>
 #include <quickjs.h>
 #include <quickjs-libc.h>
-// #include <uv.h>
+#include <event_queue.h>
 #include "bindings.h"
-// #include "timers.h"
 #include "resource.h"
 #include "global.h"
-// #include "nextTick.h"
 
 int p_argc;
 char **p_argv;
@@ -39,10 +37,8 @@ int nodert_loop(JSContext *ctx/*, uv_loop_t *loop*/)
 
     for(;;) {
 
-        // exec pending nextTick jobs
-        // if(hasPendingNextTickJob){
-        //     executeNextTickJobs(ctx);
-        // }
+        /* execute nextTick jobs */
+        consume_next_tick_event_queue(ctx);
 
         /* execute the pending jobs */
         for(;;) {
@@ -57,9 +53,10 @@ int nodert_loop(JSContext *ctx/*, uv_loop_t *loop*/)
         // if (!ts->can_js_os_poll || js_os_poll(ctx))
         //     break;
 
-        // int status = uv_run(loop, UV_RUN_NOWAIT);    // we'll use libuv after all
+        /* execute immediate jobs */
+        consume_immediate_event_queue(ctx);
 
-        if(!JS_IsJobPending(rt) /*&& uv_loop_alive(loop) == 0 && (!hasPendingNextTickJob)*/) {
+        if(!JS_IsJobPending(rt) && !has_pending_event_queue_jobs()) {
             break;
         }
     }
@@ -76,7 +73,7 @@ int main(int argc, char *argv[]) {
     JS_SetHostPromiseRejectionTracker(rt, js_std_promise_rejection_tracker, NULL);
     JSContext *ctx = JS_NewContext(rt);
 
-    // uv_loop_t *loop = uv_default_loop();
+    init_event_queues();
 
     js_std_add_helpers(ctx, argc, argv);
     js_std_init_handlers(rt);

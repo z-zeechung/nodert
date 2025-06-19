@@ -1,22 +1,21 @@
 
 import * as qstd from 'qjs:std';
 import * as bindings from 'bindings'
-// import * as timers from 'timers'
-// import {nextTick} from 'nextTick'
 // import * as fs from 'fs'
 
+const _nextTick = bindings.nextTick
 
 globalThis.bindings = {
     ...bindings,
-    // nextTick: (cb, ...args)=>{
-    //     if(typeof cb !== 'function'){
-    //         throw new Error('cb must be a function')
-    //     }
-    //     const cbWithArgs = ()=>{
-    //         cb(...args)
-    //     }
-    //     return nextTick(cbWithArgs)
-    // },
+    nextTick: (cb, ...args)=>{
+        if(typeof cb !== 'function'){
+            throw new Error('cb must be a function')
+        }
+        const cbWithArgs = ()=>{
+            cb(...args)
+        }
+        return _nextTick(cbWithArgs)
+    },
     // fs: {
     //     ...fs,
     //     constants: fs.constants(),
@@ -55,21 +54,21 @@ globalThis.bindings = {
 //     }
 //     timers.clearTimeout(id)
 // }
-// globalThis.setImmediate = (cb, ...args)=>{
-//     if(typeof cb !== 'function'){
-//         throw new Error('cb must be a function')
-//     }
-//     const cbWithArgs = ()=>{
-//         cb(...args)
-//     }
-//     return timers.setImmediate(cbWithArgs)
-// }
-// globalThis.clearImmediate = (id)=>{
-//     if(typeof id !== 'number'){
-//         throw new Error('id must be a number')
-//     }
-//     timers.clearImmediate(id)
-// }
+globalThis.setImmediate = (cb, ...args)=>{
+    if(typeof cb !== 'function'){
+        throw new Error('cb must be a function')
+    }
+    const cbWithArgs = ()=>{
+        cb(...args)
+    }
+    return bindings.setImmediate(cbWithArgs)
+}
+globalThis.clearImmediate = (id)=>{
+    if(typeof id !== 'number'){
+        throw new Error('id must be a number')
+    }
+    bindings.clearImmediate(id)
+}
 
 
 const mapping = {

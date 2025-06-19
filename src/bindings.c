@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <event_queue.h>
 
 #include <windows.h>
 #include <tlhelp32.h>
@@ -860,6 +861,25 @@ static JSValue js_sleep(JSContext *ctx, JSValueConst this_val, int argc, JSValue
     return JS_UNDEFINED;
 }
 
+// setImmediate
+static JSValue setImmediate(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    uint64_t id = push_to_immediate_event_queue(ctx, argv[0]);
+    return JS_NewInt64(ctx, id);
+}
+
+// clearImmediate
+static JSValue clearImmediate(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    uint64_t id; JS_ToInt64(ctx, &id, argv[0]);
+    clear_immediate_event_queue(ctx, id);
+    return JS_UNDEFINED;
+}
+
+// nextTick
+static JSValue nextTick(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    push_to_next_tick_event_queue(ctx, argv[0]);
+    return JS_UNDEFINED;
+}
+
 
 static const JSCFunctionListEntry bindings_funcs[] = {
     JS_CFUNC_DEF("arch", 0, arch),
@@ -904,6 +924,9 @@ static const JSCFunctionListEntry bindings_funcs[] = {
     JS_CFUNC_DEF("getPromiseState", 0, getPromiseState),
     JS_CFUNC_DEF("getPromiseResult", 0, getPromiseResult),
     JS_CFUNC_DEF("sleep", 0, js_sleep),
+    JS_CFUNC_DEF("setImmediate", 0, setImmediate),
+    JS_CFUNC_DEF("clearImmediate", 0, clearImmediate),
+    JS_CFUNC_DEF("nextTick", 0, nextTick),
 };
 
 static int bindings_module_init(JSContext *ctx, JSModuleDef *m) {
