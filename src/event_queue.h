@@ -20,6 +20,8 @@ uint64_t push_to_next_tick_event_queue(JSContext *ctx, JSValue cb);
 
 uint64_t push_to_timeout_event_queue(JSContext *ctx, JSValue cb, uint64_t delay);
 
+uint64_t push_to_interval_event_queue(JSContext *ctx, JSValue cb, uint64_t interval);
+
 int consume_immediate_event_queue(JSContext *ctx);
 
 int consume_next_tick_event_queue(JSContext *ctx);

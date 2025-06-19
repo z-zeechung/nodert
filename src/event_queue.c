@@ -86,6 +86,9 @@ uint64_t push_to_next_tick_event_queue(JSContext *ctx, JSValue cb){
 uint64_t push_to_timeout_event_queue(JSContext *ctx, JSValue cb, uint64_t delay){
     return push_to_timer_queue(ctx, &timer_queue, cb, delay, 0);
 }
+uint64_t push_to_interval_event_queue(JSContext *ctx, JSValue cb, uint64_t interval){
+    return push_to_timer_queue(ctx, &timer_queue, cb, interval, interval);
+}
 
 static int consume_timer_queue(JSContext *ctx, sc_list_t* queue){
 
@@ -134,9 +137,13 @@ int consume_timeout_event_queue(JSContext *ctx, uint64_t* min_delay){
         e = sc_list_entry(it, timer_event_t, node);
         if(e->when <= now_msec){
             JS_Call(ctx, e->cb, JS_UNDEFINED, 0, NULL);
-            JS_FreeValue(ctx, e->cb);
-            sc_list_del(&timer_queue, &(e->node));
-            free(e);
+            if(e->interval>0){
+                e->when = now_msec + e->interval;
+            }else{
+                JS_FreeValue(ctx, e->cb);
+                sc_list_del(&timer_queue, &(e->node));
+                free(e);
+            }
         }else if(*min_delay > e->when - now_msec){
             *min_delay = e->when - now_msec;
         }

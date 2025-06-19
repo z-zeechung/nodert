@@ -22,16 +22,16 @@ globalThis.bindings = {
     // }
 }
 
-// globalThis.setInterval = (cb, delay, ...args)=>{
-//     if(typeof cb !== 'function'){
-//         throw new Error('cb must be a function')
-//     }
-//     delay = Math.max(1, Math.round(delay))
-//     const cbWithArgs = ()=>{
-//         cb(...args)
-//     }
-//     return timers.setInterval(cbWithArgs, delay)
-// }
+globalThis.setInterval = (cb, delay, ...args)=>{
+    if(typeof cb !== 'function'){
+        throw new Error('cb must be a function')
+    }
+    delay = Math.max(1, Math.round(delay))
+    const cbWithArgs = ()=>{
+        cb(...args)
+    }
+    return bindings.setInterval(cbWithArgs, delay)
+}
 globalThis.setTimeout = (cb, delay, ...args)=>{
     if(typeof cb !== 'function'){
         throw new Error('cb must be a function')
@@ -42,12 +42,12 @@ globalThis.setTimeout = (cb, delay, ...args)=>{
     }
     return bindings.setTimeout(cbWithArgs, delay)
 }
-// globalThis.clearInterval = (id)=>{
-//     if(typeof id !== 'number'){
-//         throw new Error('id must be a number')
-//     }
-//     timers.clearInterval(id)
-// }
+globalThis.clearInterval = (id)=>{
+    if(typeof id !== 'number'){
+        throw new Error('id must be a number')
+    }
+    bindings.clearInterval(id)
+}
 globalThis.clearTimeout = (id)=>{
     if(typeof id !== 'number'){
         throw new Error('id must be a number')

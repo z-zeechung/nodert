@@ -894,6 +894,20 @@ static JSValue clearTimeout(JSContext *ctx, JSValueConst this_val, int argc, JSV
     return JS_UNDEFINED;
 }
 
+// setInterval
+static JSValue setInterval(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    uint64_t delay; JS_ToInt64(ctx, &delay, argv[1]);
+    uint64_t id = push_to_interval_event_queue(ctx, argv[0], delay);
+    return JS_NewInt64(ctx, id);
+}
+
+// clearInterval
+static JSValue clearInterval(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    uint64_t id; JS_ToInt64(ctx, &id, argv[0]);
+    clear_timeout_event_queue(ctx, id);
+    return JS_UNDEFINED;
+}
+
 
 static const JSCFunctionListEntry bindings_funcs[] = {
     JS_CFUNC_DEF("arch", 0, arch),
@@ -943,6 +957,8 @@ static const JSCFunctionListEntry bindings_funcs[] = {
     JS_CFUNC_DEF("nextTick", 0, nextTick),
     JS_CFUNC_DEF("setTimeout", 0, setTimeout),
     JS_CFUNC_DEF("clearTimeout", 0, clearTimeout),
+    JS_CFUNC_DEF("setInterval", 0, setInterval),
+    JS_CFUNC_DEF("clearInterval", 0, clearInterval)
 };
 
 static int bindings_module_init(JSContext *ctx, JSModuleDef *m) {
