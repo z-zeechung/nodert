@@ -19,3 +19,4 @@ node_modules
 /lib/console.js
 /lib/events.js
 /lib/assert.js
+/lib/buffer.js

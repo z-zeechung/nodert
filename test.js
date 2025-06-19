@@ -1,3 +1,3 @@
 const { internalBinding } = require('internal/test/binding');
 
-console.log(internalBinding('performance'))
+console.log(internalBinding('buffer'))

@@ -80,6 +80,7 @@ const mapping = {
     'deps/acorn-walk': 'deps/acorn-walk.js',
 
     'internal/assert': 'internal/assert.js',
+    'internal/buffer': 'internal/buffer.js',
     'internal/constants': 'internal/constants.js',
     'internal/errors': 'internal/errors.js',
     'internal/event_target': 'internal/event_target.js',
@@ -94,7 +95,7 @@ const mapping = {
 
     'assert': 'assert.js',
         'assert/strict': 'assert.strict.js',
-    'buffer': 'buffer.corelib.js',
+    'buffer': 'buffer.js',
     'console': 'console.js',
     'crypto': 'crypto.js',
     'diagnostics_channel': 'diagnostics_channel.corelib.js',
