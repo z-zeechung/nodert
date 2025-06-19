@@ -32,28 +32,28 @@ globalThis.bindings = {
 //     }
 //     return timers.setInterval(cbWithArgs, delay)
 // }
-// globalThis.setTimeout = (cb, delay, ...args)=>{
-//     if(typeof cb !== 'function'){
-//         throw new Error('cb must be a function')
-//     }
-//     delay = Math.max(1, Math.round(delay))
-//     const cbWithArgs = ()=>{
-//         cb(...args)
-//     }
-//     return timers.setTimeout(cbWithArgs, delay)
-// }
+globalThis.setTimeout = (cb, delay, ...args)=>{
+    if(typeof cb !== 'function'){
+        throw new Error('cb must be a function')
+    }
+    delay = Math.max(1, Math.round(delay))
+    const cbWithArgs = ()=>{
+        cb(...args)
+    }
+    return bindings.setTimeout(cbWithArgs, delay)
+}
 // globalThis.clearInterval = (id)=>{
 //     if(typeof id !== 'number'){
 //         throw new Error('id must be a number')
 //     }
 //     timers.clearInterval(id)
 // }
-// globalThis.clearTimeout = (id)=>{
-//     if(typeof id !== 'number'){
-//         throw new Error('id must be a number')
-//     }
-//     timers.clearTimeout(id)
-// }
+globalThis.clearTimeout = (id)=>{
+    if(typeof id !== 'number'){
+        throw new Error('id must be a number')
+    }
+    bindings.clearTimeout(id)
+}
 globalThis.setImmediate = (cb, ...args)=>{
     if(typeof cb !== 'function'){
         throw new Error('cb must be a function')

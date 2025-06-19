@@ -880,6 +880,20 @@ static JSValue nextTick(JSContext *ctx, JSValueConst this_val, int argc, JSValue
     return JS_UNDEFINED;
 }
 
+// setTimeout
+static JSValue setTimeout(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    uint64_t delay; JS_ToInt64(ctx, &delay, argv[1]);
+    uint64_t id = push_to_timeout_event_queue(ctx, argv[0], delay);
+    return JS_NewInt64(ctx, id);
+}
+
+// clearTimeout
+static JSValue clearTimeout(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    uint64_t id; JS_ToInt64(ctx, &id, argv[0]);
+    clear_timeout_event_queue(ctx, id);
+    return JS_UNDEFINED;
+}
+
 
 static const JSCFunctionListEntry bindings_funcs[] = {
     JS_CFUNC_DEF("arch", 0, arch),
@@ -927,6 +941,8 @@ static const JSCFunctionListEntry bindings_funcs[] = {
     JS_CFUNC_DEF("setImmediate", 0, setImmediate),
     JS_CFUNC_DEF("clearImmediate", 0, clearImmediate),
     JS_CFUNC_DEF("nextTick", 0, nextTick),
+    JS_CFUNC_DEF("setTimeout", 0, setTimeout),
+    JS_CFUNC_DEF("clearTimeout", 0, clearTimeout),
 };
 
 static int bindings_module_init(JSContext *ctx, JSModuleDef *m) {

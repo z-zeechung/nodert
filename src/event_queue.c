@@ -32,6 +32,7 @@ typedef struct sc_list sc_list_t;
 typedef struct {
     JSValue cb;
     uint64_t when;
+    uint64_t interval;
     sc_list_t node;
 } timer_event_t;
 
@@ -55,7 +56,8 @@ static uint64_t push_to_timer_queue(
     JSContext* ctx,
     sc_list_t* queue, 
     JSValue cb,
-    uint64_t delay
+    uint64_t delay,
+    uint64_t interval
 ){
 
     JS_DupValue(ctx, cb);
@@ -65,6 +67,7 @@ static uint64_t push_to_timer_queue(
     timer_event_t* e = (timer_event_t*)malloc(sizeof(timer_event_t));
     e->cb = cb;
     e->when = now_msec + delay;
+    e->interval = interval;
 
     sc_list_init(&(e->node));   // that's crazy
     sc_list_add_tail(queue, &(e->node));
@@ -73,15 +76,15 @@ static uint64_t push_to_timer_queue(
 }
 
 uint64_t push_to_immediate_event_queue(JSContext *ctx, JSValue cb){
-    return push_to_timer_queue(ctx, &immediate_queue, cb, 0);
+    return push_to_timer_queue(ctx, &immediate_queue, cb, 0, 0);
 }
 
 uint64_t push_to_next_tick_event_queue(JSContext *ctx, JSValue cb){
-    return push_to_timer_queue(ctx, &next_tick_queue, cb, 0);
+    return push_to_timer_queue(ctx, &next_tick_queue, cb, 0, 0);
 }
 
-uint64_t push_to_timer_event_queue(JSContext *ctx, JSValue cb, uint64_t delay){
-    return push_to_timer_queue(ctx, &timer_queue, cb, delay);
+uint64_t push_to_timeout_event_queue(JSContext *ctx, JSValue cb, uint64_t delay){
+    return push_to_timer_queue(ctx, &timer_queue, cb, delay, 0);
 }
 
 static int consume_timer_queue(JSContext *ctx, sc_list_t* queue){
@@ -114,7 +117,7 @@ int consume_next_tick_event_queue(JSContext *ctx){
 /**
  * min_delay is 0 when the queue is empty
  */
-int consume_timer_event_queue(JSContext *ctx, uint64_t* min_delay){
+int consume_timeout_event_queue(JSContext *ctx, uint64_t* min_delay){
 
     *min_delay = 0;
 
@@ -160,7 +163,7 @@ int clear_immediate_event_queue(JSContext *ctx, uint64_t id){
     return clear_timer_event(ctx, &immediate_queue, id);
 }
 
-int clear_timer_event_queue(JSContext *ctx, uint64_t id){
+int clear_timeout_event_queue(JSContext *ctx, uint64_t id){
     return clear_timer_event(ctx, &timer_queue, id);
 }
 

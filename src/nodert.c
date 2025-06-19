@@ -53,11 +53,19 @@ int nodert_loop(JSContext *ctx/*, uv_loop_t *loop*/)
         // if (!ts->can_js_os_poll || js_os_poll(ctx))
         //     break;
 
+        /* execute timer jobs */
+        uint64_t min_delay;
+        consume_timeout_event_queue(ctx, &min_delay);
+
         /* execute immediate jobs */
         consume_immediate_event_queue(ctx);
 
         if(!JS_IsJobPending(rt) && !has_pending_event_queue_jobs()) {
-            break;
+            if(min_delay>0){
+                Sleep(min_delay);
+            }else{
+                break;
+            }
         }
     }
 done:
