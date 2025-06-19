@@ -23,12 +23,6 @@ static FORCEINLINE int64_t get_current_time_milliseconds() {
 
 typedef struct sc_list sc_list_t;
 
-// typedef struct {
-//     void* data;
-//     event_callback_t* cb;
-//     atomic_flag done;
-// } event_t;
-
 typedef struct {
     JSValue cb;
     uint64_t when;
@@ -37,18 +31,32 @@ typedef struct {
 } timer_event_t;
 
 
+static sc_list_t generic_queue;
 static sc_list_t immediate_queue;
 static sc_list_t next_tick_queue;
-// static sc_list_t io_queue;
 static sc_list_t timer_queue;
 
 int init_event_queues(){
 
+    sc_list_init(&generic_queue);
     sc_list_init(&immediate_queue);
     sc_list_init(&next_tick_queue);
-    // sc_list_init(&io_queue);
     sc_list_init(&timer_queue);
     
+    return 0;
+}
+
+int push_to_generic_event_queue(worker_callback worker_cb, void* data, event_callback event_cb){
+    event_t* e = (event_t*)malloc(sizeof(event_t));
+    e->data = NULL;
+    e->cb = event_cb;
+    e->done = false;
+}
+
+int execute_event_sync(worker_callback worker_cb, void* data, event_callback event_cb){
+    event_t e = {NULL, event_cb, false};
+    worker_cb(&e, data);
+    e.cb(e.data);
     return 0;
 }
 
