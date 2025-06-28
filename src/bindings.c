@@ -908,6 +908,22 @@ static JSValue clearInterval(JSContext *ctx, JSValueConst this_val, int argc, JS
     return JS_UNDEFINED;
 }
 
+// _pseudo_marco
+struct _pseudo_marco_payload { JSContext* ctx; JSValue cb; };
+static void _pseudo_marco_event_callback(void* data){
+    struct _pseudo_marco_payload* payload = (struct _pseudo_marco_payload*)data;
+    JS_Call(payload->ctx, payload->cb, JS_UNDEFINED, 0, NULL);
+    JS_FreeValue(payload->ctx, payload->cb);
+    free(payload);
+}
+static JSValue _pseudo_marco(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    struct _pseudo_marco_payload* payload = malloc(sizeof(struct _pseudo_marco_payload));
+    payload->ctx = ctx;
+    payload->cb = JS_DupValue(ctx, argv[0]);
+    push_to_generic_event_queue(NULL, payload, _pseudo_marco_event_callback);
+    return JS_UNDEFINED;
+}
+
 
 static const JSCFunctionListEntry bindings_funcs[] = {
     JS_CFUNC_DEF("arch", 0, arch),
@@ -958,7 +974,8 @@ static const JSCFunctionListEntry bindings_funcs[] = {
     JS_CFUNC_DEF("setTimeout", 0, setTimeout),
     JS_CFUNC_DEF("clearTimeout", 0, clearTimeout),
     JS_CFUNC_DEF("setInterval", 0, setInterval),
-    JS_CFUNC_DEF("clearInterval", 0, clearInterval)
+    JS_CFUNC_DEF("clearInterval", 0, clearInterval),
+    JS_CFUNC_DEF("_pseudo_marco", 0, _pseudo_marco),
 };
 
 static int bindings_module_init(JSContext *ctx, JSModuleDef *m) {

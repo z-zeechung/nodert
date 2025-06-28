@@ -5,6 +5,7 @@
 #include "bindings.h"
 #include "resource.h"
 #include "global.h"
+#include <stdbool.h>
 
 int p_argc;
 char **p_argv;
@@ -26,9 +27,56 @@ static void print_js_error(JSContext *ctx, JSValue error) {
     JS_FreeValue(ctx, stack_val);
 }
 
+#define POOL_INTERVAL_I 16
+#define POOL_INTERVAL_II 128
+#define MAX_POOL_TIMES_I 8
+#define MAX(a,b)            (((a) > (b)) ? (a) : (b))
+#define MIN(a,b)            (((a) < (b)) ? (a) : (b))
+static void pool_arriving_events(uint64_t min_delay){
+    if(!has_pending_generic_queue_jobs()){
+        Sleep(min_delay);
+        return;
+    }
+    if(min_delay == 0){
+        for(int i=0;i<MAX_POOL_TIMES_I;i++){
+            Sleep(POOL_INTERVAL_I);
+            if(has_arriving_generic_queue_jobs()){
+                return;
+            }
+        }
+        while(true){
+            Sleep(POOL_INTERVAL_II);
+            if(has_arriving_generic_queue_jobs()){
+                return;
+            }
+        }
+    }
+    int64_t pool_times_i = (min_delay + POOL_INTERVAL_I-1) / POOL_INTERVAL_I;
+    int64_t max_pool_times_i = MIN(pool_times_i, MAX_POOL_TIMES_I);
+    for(int i=0;i<max_pool_times_i;i++){
+        Sleep(POOL_INTERVAL_I);
+        if(has_arriving_generic_queue_jobs()){
+            return;
+        }
+    }
+    if(pool_times_i == max_pool_times_i){
+        return;
+    }
+    min_delay = min_delay - max_pool_times_i * POOL_INTERVAL_I;
+    min_delay = MAX(min_delay, 0);
+    max_pool_times_i = (min_delay + POOL_INTERVAL_II-1) / POOL_INTERVAL_II;
+    for(int i=0;i<max_pool_times_i;i++){
+        Sleep(POOL_INTERVAL_II);
+        if(has_arriving_generic_queue_jobs()){
+            return;
+        }
+    }
+    return;
+}
+
 // taken from quickjs-libc.c
 /* main loop which calls the user JS callbacks */
-int nodert_loop(JSContext *ctx/*, uv_loop_t *loop*/)
+static int nodert_loop(JSContext *ctx/*, uv_loop_t *loop*/)
 {
     JSRuntime *rt = JS_GetRuntime(ctx);
     // JSThreadState *ts = js_get_thread_state(rt);     // seems that we'd have to give up qjs:os... alright, i admit it
@@ -57,12 +105,15 @@ int nodert_loop(JSContext *ctx/*, uv_loop_t *loop*/)
         uint64_t min_delay;
         consume_timeout_event_queue(ctx, &min_delay);
 
+        /* execute generic jobs */
+        consume_generic_event_queue();
+
         /* execute immediate jobs */
         consume_immediate_event_queue(ctx);
 
-        if(!JS_IsJobPending(rt) && !has_pending_event_queue_jobs()) {
-            if(min_delay>0){
-                Sleep(min_delay);
+        if(!JS_IsJobPending(rt) && !has_pending_next_tick_queue_jobs()) {
+            if(has_pending_generic_queue_jobs() || has_pending_timeout_queue_jobs()){
+                pool_arriving_events(min_delay);
             }else{
                 break;
             }
