@@ -13,8 +13,8 @@ RFLAGS = /utf-8 /n
 
 all: nodert.exe
 
-nodert.exe: bindings.obj nodert.obj qjs-libc.obj event_queue.obj sc_list.obj resource.res
-	$(LINK) src/bindings.obj src/nodert.obj libqjs/Release/qjs.lib src/qjs-libc.obj src/event_queue.obj src/sc_list.obj src/resource.res $(LDFLAGS) /OUT:nodert.exe
+nodert.exe: bindings.obj fs.obj nodert.obj qjs-libc.obj event_queue.obj sc_list.obj resource.res
+	$(LINK) src/bindings.obj src/fs.obj src/nodert.obj libqjs/Release/qjs.lib src/qjs-libc.obj src/event_queue.obj src/sc_list.obj src/resource.res $(LDFLAGS) /OUT:nodert.exe
 
 nodert.obj:
 	$(CC) src/nodert.c $(CFLAGS) /c /Fo:src/nodert.obj
@@ -25,14 +25,14 @@ qjs-libc.obj:
 bindings.obj:
 	$(CC) src/bindings.c $(CFLAGS) /c /Fo:src/bindings.obj
 
+fs.obj:
+	$(CC) src/fs.c $(CFLAGS) /c /Fo:src/fs.obj
+
 event_queue.obj:
 	$(CC) src/event_queue.c $(CFLAGS) /c /Fo:src/event_queue.obj
 
 sc_list.obj:
 	$(CC) src/sc_list.c $(CFLAGS) /c /Fo:src/sc_list.obj
-
-# fs.obj:
-# 	$(CXX) src/fs.cpp $(CXXFLAGS) /c /Fo:src/fs.obj
 
 resource.res:
 	$(RC) $(RFLAGS) /fo "src/resource.res" "src/resource.rc"

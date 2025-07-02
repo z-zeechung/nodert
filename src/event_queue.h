@@ -16,7 +16,7 @@ typedef void (*event_callback)(void* data);
 /**
  * (data: S) => T
  */
-typedef void* (*worker_callback)(void* data);
+typedef void (*worker_callback)(void* data);
 
 
 int init_event_queues();

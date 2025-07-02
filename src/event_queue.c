@@ -55,7 +55,6 @@ int init_event_queues(){
 
 typedef struct{
     worker_callback worker_cb;
-    void* data;
     event_t* e;
 } GenericEventPayload;
 VOID CALLBACK GenericEventCallback(
@@ -63,35 +62,28 @@ VOID CALLBACK GenericEventCallback(
     _Inout_opt_ PVOID                 Context
 ){
     GenericEventPayload* payload = (GenericEventPayload*)Context;
-    void* result = payload->worker_cb(
-        payload->data
+    payload->worker_cb(
+        payload->e->data
     );
-    payload->e->data = result;
     _WriteBarrier(); MemoryBarrier();
     payload->e->done = true;
     free(payload);
 }
 int push_to_generic_event_queue(worker_callback worker_cb, void* data, event_callback event_cb){
 
-    if(worker_cb==NULL){
-        event_t* e = (event_t*)malloc(sizeof(event_t));
-        e->data = NULL;
-        e->cb = event_cb;
-        e->done = true;
-
-        sc_list_init(&(e->node));
-        sc_list_add_tail(&generic_queue, &(e->node));
-
-        return 0;
-    }
-
     event_t* e = (event_t*)malloc(sizeof(event_t));
-    e->data = NULL;
+    e->data = data;
     e->cb = event_cb;
     e->done = false;
 
+    if(worker_cb==NULL){
+        e->done = true;
+        sc_list_init(&(e->node));
+        sc_list_add_tail(&generic_queue, &(e->node));
+        return 0;
+    }
+
     GenericEventPayload* payload = (GenericEventPayload*)malloc(sizeof(GenericEventPayload));
-    payload->data = data;
     payload->e = e;
     payload->worker_cb = worker_cb;
     bool success = TrySubmitThreadpoolCallback(
@@ -113,10 +105,11 @@ int push_to_generic_event_queue(worker_callback worker_cb, void* data, event_cal
 
 int execute_event_sync(worker_callback worker_cb, void* data, event_callback event_cb){
     if(worker_cb==NULL){
-        event_cb(NULL);
+        event_cb(data);
         return 0;
     }
-    event_cb(worker_cb(data));
+    worker_cb(data);
+    event_cb(data);
     return 0;
 }
 
@@ -282,14 +275,17 @@ bool has_pending_timeout_queue_jobs(){
 }
 
 bool has_arriving_generic_queue_jobs(){
-    struct sc_list *list;
-    struct sc_list *it;
-    event_t *e;
-    sc_list_foreach(list, it){
+    sc_list_t *it;
+    struct sc_list *tmp;
+    event_t* e;
+    sc_list_foreach_safe(&generic_queue, tmp, it){
         e = sc_list_entry(it, event_t, node);
         if(e->done){
             return true;
         }
+    }
+    if(sc_list_is_empty(&generic_queue)){
+        return true;    // in case somehow wrongly waiting for an empty queue
     }
     return false;
 }

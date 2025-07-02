@@ -20,3 +20,4 @@ node_modules
 /lib/events.js
 /lib/assert.js
 /lib/buffer.js
+/lib/fs.js

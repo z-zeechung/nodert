@@ -6,6 +6,7 @@
 #include "resource.h"
 #include "global.h"
 #include <stdbool.h>
+#include <fs.h>
 
 int p_argc;
 char **p_argv;
@@ -140,9 +141,7 @@ int main(int argc, char *argv[]) {
     js_init_module_std(ctx, "qjs:std");
 
     js_init_bindings(ctx, "bindings");
-    // js_init_timers_bindings(ctx, "timers");
-    // js_init_nextTick(ctx, "nextTick");
-    // js_init_fs_bindings(ctx, "fs");
+    js_init_fs_bindings(ctx, "fs");
 
     FILE *file = fopen("lib/main.js", "r");
     char script[1024*32];

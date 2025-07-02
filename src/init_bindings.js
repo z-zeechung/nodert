@@ -1,7 +1,7 @@
 
 import * as qstd from 'qjs:std';
 import * as bindings from 'bindings'
-// import * as fs from 'fs'
+import * as fs from 'fs'
 
 const _nextTick = bindings.nextTick
 
@@ -16,10 +16,44 @@ globalThis.bindings = {
         }
         return _nextTick(cbWithArgs)
     },
-    // fs: {
-    //     ...fs,
-    //     constants: fs.constants(),
-    // }
+    fs: {
+        access(path, mode, req){
+            bindings._pseudo_marco(()=>req(fs.accessSync(path, mode)))
+        },
+        accessSync: fs.accessSync,
+        rename(path, newPath, req){
+            bindings._pseudo_marco(()=>req(fs.renameSync(path, newPath)))
+        },
+        renameSync: fs.renameSync,
+        rmdir(path, req){
+            bindings._pseudo_marco(()=>req(fs.rmdirSync(path)))
+        },
+        rmdirSync: fs.rmdirSync,
+        mkdir(path, mode, recursive, req){
+            bindings._pseudo_marco(()=>req(fs.mkdirSync(path, mode, recursive)))
+        },
+        mkdirSync: fs.mkdirSync,
+        fstat(path, req){
+            bindings._pseudo_marco(()=>req(fs.fstatSync(path)))
+        },
+        fstatSync: fs.fstatSync,
+        open(path, flagsNumber, mode, req){
+            bindings._pseudo_marco(()=>req(fs.openSync(path, flagsNumber, mode)))
+        },
+        openSync: fs.openSync,
+        read: fs.read,
+        readSync: (fd, buffer, offset, length, position)=>{
+            let ret;
+            fs.readSyncCb(fd, buffer, offset, length, position, (res)=>{
+                ret = res
+            })
+            return ret
+        },
+        close(fd, req){
+            bindings._pseudo_marco(()=>req(fs.closeSync(fd)))
+        },
+        closeSync: fs.closeSync,
+    }
 }
 
 globalThis.setInterval = (cb, delay, ...args)=>{
@@ -77,8 +111,10 @@ const mapping = {
 
     'deps/acorn': 'deps/acorn.js',
     'deps/acorn-walk': 'deps/acorn-walk.js',
+    'deps/minimatch': 'deps/minimatch.js',
 
     'internal/assert': 'internal/assert.js',
+    'internal/blob': 'internal/blob.js',
     'internal/buffer': 'internal/buffer.js',
     'internal/constants': 'internal/constants.js',
     'internal/errors': 'internal/errors.js',
@@ -112,6 +148,7 @@ const mapping = {
     'timers': 'timers.corelib.js',
     'url': 'url.corelib.js',
     'util': 'util.js',
+    'util/types': 'util/types.js',
     'vm': 'vm.js',
     'zlib': 'zlib.corelib.js',
 }

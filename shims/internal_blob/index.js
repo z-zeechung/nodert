@@ -1,4 +1,10 @@
 
+/**
+ * 
+ * This won't be actually functional until webstreams and TextEncoder are impled and exposed to `globalThis`
+ * 
+ */
+
 const {
   ArrayFrom,
   MathMax,
@@ -29,8 +35,6 @@ const {
   },
 } = require('internal/errors');
 
-const { Blob: _Blob } = require('fetch-blob');
-
 const kHandle = Symbol('kHandle');
 
 function isBlob(object) {
@@ -44,18 +48,9 @@ const handler = {
 };
 const dummyKHandleObject = new Proxy({}, handler);
 
-class Blob extends _Blob {
-    constructor(...args) {
-        super(...args);
-        this[kHandle] = dummyKHandleObject;
-    }
-    bytes() {
-        if (!isBlob(this))
-            return PromiseReject(new ERR_INVALID_THIS('Blob'));
-
-        return PromisePrototypeThen(
-            arrayBuffer(this),
-            (buffer) => new Uint8Array(buffer));
+class Blob {
+    constructor(...args) {  // TODO: implement
+        throw new Error('`Blob` was not implemented in `internal/blob`');
     }
 }
 
@@ -64,7 +59,9 @@ module.exports = {
     createBlob(handle, length, type = ''){
         throw new Error('`createBlob` was not implemented in `internal/blob`');
     },
-    createBlobFromFilePath,
+    createBlobFromFilePath(path, options){  // TODO: implement
+        throw new Error('`createBlobFromFilePath` was not implemented in `internal/blob`');
+    },
     isBlob,
     kHandle,
     resolveObjectURL(url){  // TODO: deal with this when doing `url`
