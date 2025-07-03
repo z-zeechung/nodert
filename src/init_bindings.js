@@ -16,44 +16,7 @@ globalThis.bindings = {
         }
         return _nextTick(cbWithArgs)
     },
-    fs: {
-        access(path, mode, req){
-            bindings._pseudo_marco(()=>req(fs.accessSync(path, mode)))
-        },
-        accessSync: fs.accessSync,
-        rename(path, newPath, req){
-            bindings._pseudo_marco(()=>req(fs.renameSync(path, newPath)))
-        },
-        renameSync: fs.renameSync,
-        rmdir(path, req){
-            bindings._pseudo_marco(()=>req(fs.rmdirSync(path)))
-        },
-        rmdirSync: fs.rmdirSync,
-        mkdir(path, mode, recursive, req){
-            bindings._pseudo_marco(()=>req(fs.mkdirSync(path, mode, recursive)))
-        },
-        mkdirSync: fs.mkdirSync,
-        fstat(path, req){
-            bindings._pseudo_marco(()=>req(fs.fstatSync(path)))
-        },
-        fstatSync: fs.fstatSync,
-        open(path, flagsNumber, mode, req){
-            bindings._pseudo_marco(()=>req(fs.openSync(path, flagsNumber, mode)))
-        },
-        openSync: fs.openSync,
-        read: fs.read,
-        readSync: (fd, buffer, offset, length, position)=>{
-            let ret;
-            fs.readSyncCb(fd, buffer, offset, length, position, (res)=>{
-                ret = res
-            })
-            return ret
-        },
-        close(fd, req){
-            bindings._pseudo_marco(()=>req(fs.closeSync(fd)))
-        },
-        closeSync: fs.closeSync,
-    }
+    fs: fs
 }
 
 globalThis.setInterval = (cb, delay, ...args)=>{

@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <event_queue.h>
+#include "event_queue.h"
+#include "fs.h"
 
 #include <windows.h>
 #include <tlhelp32.h>
@@ -758,29 +759,6 @@ static JSValue osConstants(JSContext *ctx, JSValueConst this_val, int argc, JSVa
 static JSValue fsConstants(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
     JSValue constants = JS_NewObject(ctx);
     #define C(name) JS_SetPropertyStr(ctx, constants, #name, JS_NewInt32(ctx, name));
-    #ifdef _WIN32
-        #define O_RDONLY   _O_RDONLY
-        #define O_WRONLY   _O_WRONLY
-        #define O_RDWR     _O_RDWR
-        #define O_CREAT    _O_CREAT
-        #define O_EXCL     _O_EXCL
-        #define O_TRUNC    _O_TRUNC
-        #define O_APPEND   _O_APPEND
-
-        #define S_IFMT     _S_IFMT
-        #define S_IFREG    _S_IFREG
-        #define S_IFDIR    _S_IFDIR
-        #define S_IFCHR    _S_IFCHR
-        #define S_IFIFO    _S_IFIFO
-        #define S_IFLNK    0xA000
-        #define S_IRUSR    _S_IREAD
-        #define S_IWUSR    _S_IWRITE
-
-        #define F_OK 0  // aligned with `_access` mode flags in msvc <io.h>
-        #define R_OK 4
-        #define W_OK 2
-        #define X_OK 1
-    #endif
     #define UV_FS_SYMLINK_DIR            1    // `UV_*` constants will be defined as the same code 
     #define UV_FS_SYMLINK_JUNCTION       2    // in libuv, in case someone use hardcoded values in 
     #define UV_DIRENT_UNKNOWN            0    // their js code

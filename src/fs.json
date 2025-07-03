@@ -1,0 +1,201 @@
+{
+    "name": "fs",
+    "includes": [
+        { "name": "fs.h" },
+        { "name": "fs.inc" }
+    ],
+    "bindings": [
+        {
+            "name": "access",
+            "function": "fs_access",
+            "params": [ "string", "int32" ],
+            "return": "void",
+            "async": true
+        },
+        {
+            "name": "accessSync",
+            "function": "fs_access",
+            "params": [ "string", "int32" ],
+            "return": "void"
+        },
+        {
+            "name": "existsSync",
+            "function": "fs_exists",
+            "params": [ "string" ],
+            "return": "boolean"
+        },
+        {
+            "name": "open",
+            "function": "fs_open",
+            "params": [ "string", "int32", "int32" ],
+            "return": "int32",
+            "async": true
+        },
+        {
+            "name": "openSync",
+            "function": "fs_open",
+            "params": [ "string", "int32", "int32" ],
+            "return": "int32"
+        },
+        {
+            "name": "close",
+            "function": "fs_close",
+            "params": [ "int32" ],
+            "return": "void",
+            "async": true
+        },
+        {
+            "name": "closeSync",
+            "function": "fs_close",
+            "params": [ "int32" ],
+            "return": "void"
+        },
+        {
+            "name": "read",
+            "function": "fs_read",
+            "params": [
+                "int32", "arraybuffer", "int64", "int64", "int64"
+            ],
+            "return": "int64",
+            "async": true
+        },
+        {
+            "name": "readSync",
+            "function": "fs_read",
+            "params": [
+                "int32", "arraybuffer", "int64", "int64", "int64"
+            ],
+            "return": "int64"
+        },
+        {
+            "name": "readFileUtf8",
+            "function": "fs_read_file_utf8",
+            "params": [ "string", "int32" ],
+            "return": "string",
+            "async": true
+        },
+        {
+            "name": "readFileUtf8Sync",
+            "function": "fs_read_file_utf8",
+            "params": [ "string", "int32" ],
+            "return": "string"
+        },
+        {
+            "name": "rename",
+            "function": "fs_rename",
+            "params": [ "string", "string" ],
+            "return": "void",
+            "async": true
+        },
+        {
+            "name": "renameSync",
+            "function": "fs_rename",
+            "params": [ "string", "string" ],
+            "return": "void"
+        },
+        {
+            "name": "ftruncate",
+            "function": "fs_ftruncate",
+            "params": [ "int32", "int64" ],
+            "return": "void",
+            "async": true
+        },
+        {
+            "name": "ftruncateSync",
+            "function": "fs_ftruncate",
+            "params": [ "int32", "int64" ],
+            "return": "void"
+        },
+        {
+            "name": "rmdir",
+            "function": "fs_rmdir",
+            "params": [ "string" ],
+            "return": "void",
+            "async": true
+        },
+        {
+            "name": "rmdirSync",
+            "function": "fs_rmdir",
+            "params": [ "string" ],
+            "return": "void"
+        },
+        {
+            "name": "fsync",
+            "function": "fs_fsync",
+            "params": [ "int32" ],
+            "return": "void",
+            "async": true
+        },
+        {
+            "name": "fsyncSync",
+            "function": "fs_fsync",
+            "params": [ "int32" ],
+            "return": "void"
+        },
+        {
+            "name": "fdatasync",
+            "function": "fs_fdatasync",
+            "params": [ "int32" ],
+            "return": "void",
+            "async": true
+        },
+        {
+            "name": "fdatasyncSync",
+            "function": "fs_fdatasync",
+            "params": [ "int32" ],
+            "return": "void"
+        },
+        {
+            "name": "readdir",
+            "function": "fs_readdir",
+            "params": [ "string" ],
+            "return": "stringarray",
+            "async": true
+        },
+        {
+            "name": "readdirSync",
+            "function": "fs_readdir",
+            "params": [ "string" ],
+            "return": "stringarray"
+        },
+        {
+            "name": "fstat",
+            "function": "fs_fstat",
+            "params": [ "int32" ],
+            "return": "int64array",
+            "async": true
+        },
+        {
+            "name": "fstatSync",
+            "function": "fs_fstat",
+            "params": [ "int32" ],
+            "return": "int64array"
+        },
+        {
+            "name": "lstat",
+            "function": "fs_lstat",
+            "params": [ "string" ],
+            "return": "int64array",
+            "async": true
+        },
+        {
+            "name": "lstatSync",
+            "function": "fs_lstat",
+            "params": [ "string" ],
+            "return": "int64array"
+        },
+        {
+            "name": "stat",
+            "function": "fs_stat",
+            "params": [ "string" ],
+            "return": "int64array",
+            "async": true
+        },
+        {
+            "name": "statSync",
+            "function": "fs_stat",
+            "params": [ "string" ],
+            "return": "int64array"
+        }
+    ]
+}
