@@ -196,6 +196,117 @@
             "function": "fs_stat",
             "params": [ "string" ],
             "return": "int64array"
+        },
+        {
+            "name": "statfs",
+            "function": "fs_statfs",
+            "params": [ "string" ],
+            "return": "int64array",
+            "async": true
+        },
+        {
+            "name": "statfsSync",
+            "function": "fs_statfs",
+            "params": [ "string" ],
+            "return": "int64array"
+        },
+        {
+            "name": "readlink",
+            "function": "fs_readlink",
+            "params": [ "string" ],
+            "return": "string",
+            "async": true
+        },
+        {
+            "name": "readlinkSync",
+            "function": "fs_readlink",
+            "params": [ "string" ],
+            "return": "string"
+        },
+        {
+            "name": "link",
+            "function": "fs_link",
+            "params": [ "string", "string" ],
+            "return": "void",
+            "async": true
+        },
+        {
+            "name": "linkSync",
+            "function": "fs_link",
+            "params": [ "string", "string" ],
+            "return": "void"
+        },
+        {
+            "name": "unlink",
+            "function": "fs_unlink",
+            "params": [ "string" ],
+            "return": "void",
+            "async": true
+        },
+        {
+            "name": "unlinkSync",
+            "function": "fs_unlink",
+            "params": [ "string" ],
+            "return": "void"
+        },
+        {
+            "name": "chmod",
+            "function": "fs_chmod",
+            "params": [ "string", "int32" ],
+            "return": "void",
+            "async": true
+        },
+        {
+            "name": "chmodSync",
+            "function": "fs_chmod",
+            "params": [ "string", "int32" ],
+            "return": "void"
+        },
+        {
+            "name": "lchown",
+            "function": "fs_lchown",
+            "params": [ "string", "int32", "int32" ],
+            "return": "void",
+            "async": true
+        },
+        {
+            "name": "lchownSync",
+            "function": "fs_lchown",
+            "params": [ "string", "int32", "int32" ],
+            "return": "void"
+        },
+        {
+            "name": "fchown",
+            "function": "fs_fchown",
+            "params": [ "int32", "int32", "int32" ],
+            "return": "void",
+            "async": true
+        },
+        {
+            "name": "fchownSync",
+            "function": "fs_fchown",
+            "params": [ "int32", "int32", "int32" ],
+            "return": "void"
+        },
+        {
+            "name": "chown",
+            "function": "fs_chown",
+            "params": [ "string", "int32", "int32" ],
+            "return": "void",
+            "async": true
+        },
+        {
+            "name": "futimes",
+            "function": "fs_futimes",
+            "params": [ "int32", "int64", "int64" ],
+            "return": "void",
+            "async": true
+        },
+        {
+            "name": "futimesSync",
+            "function": "fs_futimes",
+            "params": [ "int32", "int64", "int64" ],
+            "return": "void"
         }
     ]
 }

@@ -174,81 +174,61 @@ static inline void fs_fdatasync(int fd){
 
 static inline string_array fs_readdir(char* path){
 
-    string_array str_arr = {};
+    string_array arr;
 
     wchar_t* wpath = utf8_to_wchar(path);
-    if (!wpath){
-        errno = ENOMEM;
-        return str_arr;
-    }
+    if (!wpath){ errno = ENOMEM; return arr; }
 
-    WIN32_FIND_DATAW findData;
-    HANDLE hFind;
-    wchar_t searchPath[MAX_PATH];
-    wchar_t fullPath[MAX_PATH];
+    DIR* dir = _wopendir(wpath);
+    free(wpath);
+    if (!dir){ return arr; }
 
-    int max_path = 16;
-    int current_path = 0;
-    char** result = (char**)malloc(sizeof(char*) * max_path);
-    if(!result){
-        errno = ENOMEM;
-        free(wpath);
-        return str_arr;
-    }
-    for(int i=0;i<max_path;i++){ result[i] = NULL; }
+    int max_entries = 16;
+    arr.strs = malloc(sizeof(char*) * max_entries);
+    arr.count = 0;
+    if(!arr.strs){ closedir(dir); errno = ENOMEM; return arr; }
 
-    swprintf_s(searchPath, MAX_PATH, L"%s\\*", wpath);
-
-    hFind = FindFirstFileW(searchPath, &findData);
-    if (hFind == INVALID_HANDLE_VALUE) {
-        errno = win_errno_to_posix_errno(GetLastError(), ENOENT);
-        free(wpath);
-        free(result);
-        return str_arr;
-    }
-
-    do {
-        // no . or ..
-        if (wcscmp(findData.cFileName, L".") == 0 || 
-            wcscmp(findData.cFileName, L"..") == 0) {
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if(
+            (entry->d_name[0]=='.' && entry->d_name[1]==0) ||
+            (entry->d_name[0]=='.' && entry->d_name[1]=='.' && entry->d_name[2]==0)
+        ){
             continue;
         }
-        
-        // full path
-        swprintf_s(fullPath, MAX_PATH, L"%s\\%s", wpath, findData.cFileName);
-
-        if(current_path == max_path){
-            max_path *= 2;
-            result = (char**)realloc(result, sizeof(char*) * max_path);
-            if(!result){
-                errno = ENOMEM;
-                for(int i=0;i<current_path;i++){ free(result[i]); }
-                free(result);
-                free(wpath);
-                return str_arr;
+        if(arr.count == max_entries){
+            max_entries *= 2;
+            char** prev_strs = arr.strs; arr.strs = realloc(arr.strs, sizeof(char*) * max_entries);
+            if(!arr.strs){ 
+                for(int i = 0; i < arr.count; i++) free(prev_strs[i]);
+                free(prev_strs);
+                closedir(dir); 
+                errno = ENOMEM; 
+                return arr; 
             }
-            for(int i=current_path;i<max_path;i++){ result[i] = NULL; }
         }
-        result[current_path] = wchar_to_utf8(fullPath);
-        if(!result[current_path]){
+        int len = strlen(entry->d_name);
+        arr.strs[arr.count] = malloc(sizeof(char)*(len+1));
+        if(!arr.strs[arr.count]){
+            for(int i = 0; i < arr.count; i++) free(arr.strs[i]);
+            free(arr.strs);
+            closedir(dir);
             errno = ENOMEM;
-            for(int i=0;i<current_path;i++){ free(result[i]); }
-            free(result);
-            free(wpath);
-            return str_arr;
+            return arr;
         }
-        current_path++;
-        
-    } while (FindNextFileW(hFind, &findData));
-    
-    FindClose(hFind);
+        memcpy(arr.strs[arr.count], entry->d_name, len+1);
+        arr.count++;
+    }
 
-    free(wpath);
+    closedir(dir);
 
-    str_arr.count = current_path;
-    str_arr.strs = result;
+    if(errno != 0) {
+        for(int i = 0; i < arr.count; i++) free(arr.strs[i]);
+        free(arr.strs);
+        return arr;
+    }
 
-    return str_arr;
+    return arr;
 }
 
 static inline int64_array fs_fstat(int fd){
@@ -389,4 +369,184 @@ static inline int64_array fs_stat(char* path){
     close(fd);
 
     return arr;
+}
+
+static inline int64_array fs_statfs(char* path){
+
+    int64_array arr;
+
+    wchar_t* wpath = utf8_to_wchar(path);
+    if(wpath == NULL){ errno = ENOMEM; return arr; }
+
+    int type = 0;
+
+    DWORD sectors_per_cluster;
+    DWORD bytes_per_sector;
+    DWORD free_clusters;
+    DWORD total_clusters;
+    if(!GetDiskFreeSpaceW(
+        wpath,
+        &sectors_per_cluster, &bytes_per_sector,
+        &free_clusters, &total_clusters
+    )){
+        errno = win_errno_to_posix_errno(GetLastError(), EIO);
+        free(wpath);
+        return arr;
+    }
+
+    int64_t bsize = sectors_per_cluster * bytes_per_sector;
+    int64_t blocks = total_clusters;
+    int64_t bfree = free_clusters;
+    int64_t bavail = free_clusters;
+
+    int files = 0;
+    int ffree = 0;
+
+    arr.count = 7;
+    arr.data = malloc(sizeof(int64_t) * arr.count);
+    if(arr.data == NULL){
+        free(wpath);
+        errno = ENOMEM; 
+        return arr; 
+    }
+
+    arr.data[0] = type;
+    arr.data[1] = bsize;
+    arr.data[2] = blocks;
+    arr.data[3] = bfree;
+    arr.data[4] = bavail;
+    arr.data[5] = files;
+    arr.data[6] = ffree;
+
+    free(wpath);
+
+    return arr;
+}
+
+static inline char* fs_readlink(char* path){
+
+    wchar_t* wpath = utf8_to_wchar(path);
+    if(wpath == NULL){
+        errno = ENOMEM;
+        return NULL;
+    }
+
+    HANDLE hFile = CreateFileW(
+        wpath,  
+        GENERIC_READ,
+        FILE_SHARE_READ,
+        NULL,
+        OPEN_EXISTING,
+        FILE_FLAG_BACKUP_SEMANTICS,
+        NULL
+    );
+
+    if (hFile == INVALID_HANDLE_VALUE) {
+        free(wpath);
+        errno = win_errno_to_posix_errno(GetLastError(), EIO);
+        return NULL;
+    }
+
+    wchar_t finalPath[MAX_PATH];
+    DWORD result = GetFinalPathNameByHandleW(
+        hFile,
+        finalPath,
+        MAX_PATH,
+        FILE_NAME_NORMALIZED | VOLUME_NAME_DOS
+    );
+
+    if (result == 0){
+        CloseHandle(hFile);
+        free(wpath);
+        errno = win_errno_to_posix_errno(GetLastError(), EIO);
+        return NULL;
+    }
+
+    CloseHandle(hFile);
+    free(wpath);
+
+    return wchar_to_utf8(finalPath);
+}
+
+static inline void fs_link(char* oldpath, char* newpath){
+    wchar_t* woldpath = utf8_to_wchar(oldpath);
+    wchar_t* wnewpath = utf8_to_wchar(newpath);
+
+    if(woldpath == NULL || wnewpath == NULL){
+        if(woldpath != NULL) free(woldpath);
+        if(wnewpath != NULL) free(wnewpath);
+        errno = ENOMEM;
+        return;
+    }
+
+    if(CreateHardLinkW(wnewpath, woldpath, NULL) == 0){
+        free(woldpath);
+        free(wnewpath);
+        errno = win_errno_to_posix_errno(GetLastError(), EIO);
+        return;
+    }
+
+    free(woldpath);
+    free(wnewpath);
+}
+
+static inline void fs_unlink(char* path){
+    wchar_t* wpath = utf8_to_wchar(path);
+
+    if(wpath == NULL){
+        errno = ENOMEM;
+        return;
+    }
+
+    _wunlink(wpath);
+
+    free(wpath);
+}
+
+static inline void fs_chmod(char* path, int mode){
+    wchar_t* wpath = utf8_to_wchar(path);
+
+    if(wpath == NULL){
+        errno = ENOMEM;
+        return;
+    }
+
+    _wchmod(wpath, mode);
+
+    free(wpath);
+}
+
+static inline void fs_lchown(char* path, int uid, int gid){
+    // do nothing in win32
+}
+
+static inline void fs_fchown(int fd, int uid, int gid){
+    // do nothing in win32
+}
+
+static inline void fs_chown(char* path, int uid, int gid){
+    // do nothing in win32
+}
+
+static inline void fs_futimes(int fd, int64_t atime, int64_t mtime){
+
+    int64_t atime_ft = ((int64_t)atime + 11644473600LL) * 10000000LL;
+    int64_t mtime_ft = ((int64_t)mtime + 11644473600LL) * 10000000LL;
+
+    FILETIME ft_atime, ft_mtime;
+    ft_atime.dwLowDateTime = (DWORD)(atime_ft & 0xFFFFFFFF);
+    ft_atime.dwHighDateTime = (DWORD)(atime_ft >> 32);
+    ft_mtime.dwLowDateTime = (DWORD)(mtime_ft & 0xFFFFFFFF);
+    ft_mtime.dwHighDateTime = (DWORD)(mtime_ft >> 32);
+
+    HANDLE h = (HANDLE)_get_osfhandle(fd);
+    if(h == INVALID_HANDLE_VALUE){
+        errno = win_errno_to_posix_errno(GetLastError(), EIO);
+        return;
+    }
+
+    if(!SetFileTime(h, NULL, &ft_atime, &ft_mtime)){
+        errno = win_errno_to_posix_errno(GetLastError(), EIO);
+        return;
+    }
 }

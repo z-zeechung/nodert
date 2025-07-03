@@ -1395,6 +1395,868 @@ static JSValue fs_statSync_wrapper(JSContext* ctx, JSValueConst this_val,
 }
 
 
+
+
+struct fs_statfs_wrapper_payload {
+    JSContext* ctx;
+    JSValueConst this_val;
+    char* var0;
+    int64_array retval;
+    JSValue cb;
+    int errnum;
+};
+
+static void fs_statfs_wrapper_event(struct fs_statfs_wrapper_payload* payload) {
+    char* var0 = payload->var0;
+    int64_array retval = payload->retval;
+    JSContext* ctx = payload->ctx;
+
+    JSValue js_retval = JS_NewArray(ctx);
+    for (int i = 0; i < retval.count; i++) {
+        JS_SetPropertyUint32(ctx, js_retval, i,
+                             JS_NewInt64(ctx, retval.data[i]));
+    }
+
+    JSValue returns[2];
+    if (payload->errnum != 0) {  // TODO
+        returns[0] = JS_NewError(ctx);
+        returns[1] = JS_UNDEFINED;
+    } else {
+        returns[0] = JS_UNDEFINED;
+        returns[1] = js_retval;
+    }
+    JS_Call(payload->ctx, payload->cb, payload->this_val, 2, returns);
+
+    JS_FreeCString(ctx, var0);
+
+    if (payload->errnum == 0) {
+        if (retval.data) {
+            free(retval.data);
+        }
+    }
+
+    JS_FreeValue(ctx, payload->cb);
+    free(payload);
+}
+
+static void fs_statfs_wrapper_worker(
+    struct fs_statfs_wrapper_payload* payload) {
+    errno = 0;
+    payload->retval = fs_statfs(payload->var0);
+    payload->errnum = errno;
+}
+
+static JSValue fs_statfs_wrapper(JSContext* ctx, JSValueConst this_val,
+                                 int argc, JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    struct fs_statfs_wrapper_payload* payload =
+        (struct fs_statfs_wrapper_payload*)malloc(
+            sizeof(struct fs_statfs_wrapper_payload));
+
+    payload->var0 = var0;
+    payload->ctx = ctx;
+    payload->this_val = this_val;
+    payload->cb = JS_DupValue(ctx, argv[1]);
+    payload->errnum = 0;
+
+    push_to_generic_event_queue(fs_statfs_wrapper_worker, payload,
+                                fs_statfs_wrapper_event);
+
+    return JS_UNDEFINED;
+}
+
+
+
+static JSValue fs_statfsSync_wrapper(JSContext* ctx, JSValueConst this_val,
+                                     int argc, JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    errno = 0;
+    int64_array retval = fs_statfs(var0);
+    if (errno != 0) {  // TODO
+
+        JS_FreeCString(ctx, var0);
+
+        return JS_ThrowInternalError(ctx, "errno is not 0");
+    }
+
+    JSValue js_retval = JS_NewArray(ctx);
+    for (int i = 0; i < retval.count; i++) {
+        JS_SetPropertyUint32(ctx, js_retval, i,
+                             JS_NewInt64(ctx, retval.data[i]));
+    }
+
+    JS_FreeCString(ctx, var0);
+
+    if (retval.data) {
+        free(retval.data);
+    }
+
+    return js_retval;
+}
+
+
+
+
+struct fs_readlink_wrapper_payload {
+    JSContext* ctx;
+    JSValueConst this_val;
+    char* var0;
+    char* retval;
+    JSValue cb;
+    int errnum;
+};
+
+static void fs_readlink_wrapper_event(
+    struct fs_readlink_wrapper_payload* payload) {
+    char* var0 = payload->var0;
+    char* retval = payload->retval;
+    JSContext* ctx = payload->ctx;
+
+    JSValue js_retval = JS_NewStringLen(ctx, retval, strlen(retval));
+
+    JSValue returns[2];
+    if (payload->errnum != 0) {  // TODO
+        returns[0] = JS_NewError(ctx);
+        returns[1] = JS_UNDEFINED;
+    } else {
+        returns[0] = JS_UNDEFINED;
+        returns[1] = js_retval;
+    }
+    JS_Call(payload->ctx, payload->cb, payload->this_val, 2, returns);
+
+    JS_FreeCString(ctx, var0);
+
+    if (payload->errnum == 0) {
+        if (retval) {
+            free(retval);
+        }
+    }
+
+    JS_FreeValue(ctx, payload->cb);
+    free(payload);
+}
+
+static void fs_readlink_wrapper_worker(
+    struct fs_readlink_wrapper_payload* payload) {
+    errno = 0;
+    payload->retval = fs_readlink(payload->var0);
+    payload->errnum = errno;
+}
+
+static JSValue fs_readlink_wrapper(JSContext* ctx, JSValueConst this_val,
+                                   int argc, JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    struct fs_readlink_wrapper_payload* payload =
+        (struct fs_readlink_wrapper_payload*)malloc(
+            sizeof(struct fs_readlink_wrapper_payload));
+
+    payload->var0 = var0;
+    payload->ctx = ctx;
+    payload->this_val = this_val;
+    payload->cb = JS_DupValue(ctx, argv[1]);
+    payload->errnum = 0;
+
+    push_to_generic_event_queue(fs_readlink_wrapper_worker, payload,
+                                fs_readlink_wrapper_event);
+
+    return JS_UNDEFINED;
+}
+
+
+
+static JSValue fs_readlinkSync_wrapper(JSContext* ctx, JSValueConst this_val,
+                                       int argc, JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    errno = 0;
+    char* retval = fs_readlink(var0);
+    if (errno != 0) {  // TODO
+
+        JS_FreeCString(ctx, var0);
+
+        return JS_ThrowInternalError(ctx, "errno is not 0");
+    }
+
+    JSValue js_retval = JS_NewStringLen(ctx, retval, strlen(retval));
+
+    JS_FreeCString(ctx, var0);
+
+    if (retval) {
+        free(retval);
+    }
+
+    return js_retval;
+}
+
+
+
+
+struct fs_link_wrapper_payload {
+    JSContext* ctx;
+    JSValueConst this_val;
+    char* var0;
+    char* var1;
+
+    JSValue cb;
+    int errnum;
+};
+
+static void fs_link_wrapper_event(struct fs_link_wrapper_payload* payload) {
+    char* var0 = payload->var0;
+    char* var1 = payload->var1;
+
+    JSContext* ctx = payload->ctx;
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    JSValue returns[2];
+    if (payload->errnum != 0) {  // TODO
+        returns[0] = JS_NewError(ctx);
+        returns[1] = JS_UNDEFINED;
+    } else {
+        returns[0] = JS_UNDEFINED;
+        returns[1] = js_retval;
+    }
+    JS_Call(payload->ctx, payload->cb, payload->this_val, 2, returns);
+
+    JS_FreeCString(ctx, var0);
+
+    JS_FreeCString(ctx, var1);
+
+    if (payload->errnum == 0) {
+    }
+
+    JS_FreeValue(ctx, payload->cb);
+    free(payload);
+}
+
+static void fs_link_wrapper_worker(struct fs_link_wrapper_payload* payload) {
+    errno = 0;
+    fs_link(payload->var0, payload->var1);
+    payload->errnum = errno;
+}
+
+static JSValue fs_link_wrapper(JSContext* ctx, JSValueConst this_val, int argc,
+                               JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    const char* var1 = JS_ToCString(ctx, argv[1]);
+
+    struct fs_link_wrapper_payload* payload =
+        (struct fs_link_wrapper_payload*)malloc(
+            sizeof(struct fs_link_wrapper_payload));
+
+    payload->var0 = var0;
+    payload->var1 = var1;
+    payload->ctx = ctx;
+    payload->this_val = this_val;
+    payload->cb = JS_DupValue(ctx, argv[2]);
+    payload->errnum = 0;
+
+    push_to_generic_event_queue(fs_link_wrapper_worker, payload,
+                                fs_link_wrapper_event);
+
+    return JS_UNDEFINED;
+}
+
+
+
+static JSValue fs_linkSync_wrapper(JSContext* ctx, JSValueConst this_val,
+                                   int argc, JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    const char* var1 = JS_ToCString(ctx, argv[1]);
+
+    errno = 0;
+    fs_link(var0, var1);
+    if (errno != 0) {  // TODO
+
+        JS_FreeCString(ctx, var0);
+
+        JS_FreeCString(ctx, var1);
+
+        return JS_ThrowInternalError(ctx, "errno is not 0");
+    }
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    JS_FreeCString(ctx, var0);
+
+    JS_FreeCString(ctx, var1);
+
+    return js_retval;
+}
+
+
+
+
+struct fs_unlink_wrapper_payload {
+    JSContext* ctx;
+    JSValueConst this_val;
+    char* var0;
+
+    JSValue cb;
+    int errnum;
+};
+
+static void fs_unlink_wrapper_event(struct fs_unlink_wrapper_payload* payload) {
+    char* var0 = payload->var0;
+
+    JSContext* ctx = payload->ctx;
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    JSValue returns[2];
+    if (payload->errnum != 0) {  // TODO
+        returns[0] = JS_NewError(ctx);
+        returns[1] = JS_UNDEFINED;
+    } else {
+        returns[0] = JS_UNDEFINED;
+        returns[1] = js_retval;
+    }
+    JS_Call(payload->ctx, payload->cb, payload->this_val, 2, returns);
+
+    JS_FreeCString(ctx, var0);
+
+    if (payload->errnum == 0) {
+    }
+
+    JS_FreeValue(ctx, payload->cb);
+    free(payload);
+}
+
+static void fs_unlink_wrapper_worker(
+    struct fs_unlink_wrapper_payload* payload) {
+    errno = 0;
+    fs_unlink(payload->var0);
+    payload->errnum = errno;
+}
+
+static JSValue fs_unlink_wrapper(JSContext* ctx, JSValueConst this_val,
+                                 int argc, JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    struct fs_unlink_wrapper_payload* payload =
+        (struct fs_unlink_wrapper_payload*)malloc(
+            sizeof(struct fs_unlink_wrapper_payload));
+
+    payload->var0 = var0;
+    payload->ctx = ctx;
+    payload->this_val = this_val;
+    payload->cb = JS_DupValue(ctx, argv[1]);
+    payload->errnum = 0;
+
+    push_to_generic_event_queue(fs_unlink_wrapper_worker, payload,
+                                fs_unlink_wrapper_event);
+
+    return JS_UNDEFINED;
+}
+
+
+
+static JSValue fs_unlinkSync_wrapper(JSContext* ctx, JSValueConst this_val,
+                                     int argc, JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    errno = 0;
+    fs_unlink(var0);
+    if (errno != 0) {  // TODO
+
+        JS_FreeCString(ctx, var0);
+
+        return JS_ThrowInternalError(ctx, "errno is not 0");
+    }
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    JS_FreeCString(ctx, var0);
+
+    return js_retval;
+}
+
+
+
+
+struct fs_chmod_wrapper_payload {
+    JSContext* ctx;
+    JSValueConst this_val;
+    char* var0;
+    int32_t var1;
+
+    JSValue cb;
+    int errnum;
+};
+
+static void fs_chmod_wrapper_event(struct fs_chmod_wrapper_payload* payload) {
+    char* var0 = payload->var0;
+    int32_t var1 = payload->var1;
+
+    JSContext* ctx = payload->ctx;
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    JSValue returns[2];
+    if (payload->errnum != 0) {  // TODO
+        returns[0] = JS_NewError(ctx);
+        returns[1] = JS_UNDEFINED;
+    } else {
+        returns[0] = JS_UNDEFINED;
+        returns[1] = js_retval;
+    }
+    JS_Call(payload->ctx, payload->cb, payload->this_val, 2, returns);
+
+    JS_FreeCString(ctx, var0);
+
+    if (payload->errnum == 0) {
+    }
+
+    JS_FreeValue(ctx, payload->cb);
+    free(payload);
+}
+
+static void fs_chmod_wrapper_worker(struct fs_chmod_wrapper_payload* payload) {
+    errno = 0;
+    fs_chmod(payload->var0, payload->var1);
+    payload->errnum = errno;
+}
+
+static JSValue fs_chmod_wrapper(JSContext* ctx, JSValueConst this_val, int argc,
+                                JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    int32_t var1;
+    JS_ToInt32(ctx, &var1, argv[1]);
+
+    struct fs_chmod_wrapper_payload* payload =
+        (struct fs_chmod_wrapper_payload*)malloc(
+            sizeof(struct fs_chmod_wrapper_payload));
+
+    payload->var0 = var0;
+    payload->var1 = var1;
+    payload->ctx = ctx;
+    payload->this_val = this_val;
+    payload->cb = JS_DupValue(ctx, argv[2]);
+    payload->errnum = 0;
+
+    push_to_generic_event_queue(fs_chmod_wrapper_worker, payload,
+                                fs_chmod_wrapper_event);
+
+    return JS_UNDEFINED;
+}
+
+
+
+static JSValue fs_chmodSync_wrapper(JSContext* ctx, JSValueConst this_val,
+                                    int argc, JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    int32_t var1;
+    JS_ToInt32(ctx, &var1, argv[1]);
+
+    errno = 0;
+    fs_chmod(var0, var1);
+    if (errno != 0) {  // TODO
+
+        JS_FreeCString(ctx, var0);
+
+        return JS_ThrowInternalError(ctx, "errno is not 0");
+    }
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    JS_FreeCString(ctx, var0);
+
+    return js_retval;
+}
+
+
+
+
+struct fs_lchown_wrapper_payload {
+    JSContext* ctx;
+    JSValueConst this_val;
+    char* var0;
+    int32_t var1;
+    int32_t var2;
+
+    JSValue cb;
+    int errnum;
+};
+
+static void fs_lchown_wrapper_event(struct fs_lchown_wrapper_payload* payload) {
+    char* var0 = payload->var0;
+    int32_t var1 = payload->var1;
+    int32_t var2 = payload->var2;
+
+    JSContext* ctx = payload->ctx;
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    JSValue returns[2];
+    if (payload->errnum != 0) {  // TODO
+        returns[0] = JS_NewError(ctx);
+        returns[1] = JS_UNDEFINED;
+    } else {
+        returns[0] = JS_UNDEFINED;
+        returns[1] = js_retval;
+    }
+    JS_Call(payload->ctx, payload->cb, payload->this_val, 2, returns);
+
+    JS_FreeCString(ctx, var0);
+
+    if (payload->errnum == 0) {
+    }
+
+    JS_FreeValue(ctx, payload->cb);
+    free(payload);
+}
+
+static void fs_lchown_wrapper_worker(
+    struct fs_lchown_wrapper_payload* payload) {
+    errno = 0;
+    fs_lchown(payload->var0, payload->var1, payload->var2);
+    payload->errnum = errno;
+}
+
+static JSValue fs_lchown_wrapper(JSContext* ctx, JSValueConst this_val,
+                                 int argc, JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    int32_t var1;
+    JS_ToInt32(ctx, &var1, argv[1]);
+
+    int32_t var2;
+    JS_ToInt32(ctx, &var2, argv[2]);
+
+    struct fs_lchown_wrapper_payload* payload =
+        (struct fs_lchown_wrapper_payload*)malloc(
+            sizeof(struct fs_lchown_wrapper_payload));
+
+    payload->var0 = var0;
+    payload->var1 = var1;
+    payload->var2 = var2;
+    payload->ctx = ctx;
+    payload->this_val = this_val;
+    payload->cb = JS_DupValue(ctx, argv[3]);
+    payload->errnum = 0;
+
+    push_to_generic_event_queue(fs_lchown_wrapper_worker, payload,
+                                fs_lchown_wrapper_event);
+
+    return JS_UNDEFINED;
+}
+
+
+
+static JSValue fs_lchownSync_wrapper(JSContext* ctx, JSValueConst this_val,
+                                     int argc, JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    int32_t var1;
+    JS_ToInt32(ctx, &var1, argv[1]);
+
+    int32_t var2;
+    JS_ToInt32(ctx, &var2, argv[2]);
+
+    errno = 0;
+    fs_lchown(var0, var1, var2);
+    if (errno != 0) {  // TODO
+
+        JS_FreeCString(ctx, var0);
+
+        return JS_ThrowInternalError(ctx, "errno is not 0");
+    }
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    JS_FreeCString(ctx, var0);
+
+    return js_retval;
+}
+
+
+
+
+struct fs_fchown_wrapper_payload {
+    JSContext* ctx;
+    JSValueConst this_val;
+    int32_t var0;
+    int32_t var1;
+    int32_t var2;
+
+    JSValue cb;
+    int errnum;
+};
+
+static void fs_fchown_wrapper_event(struct fs_fchown_wrapper_payload* payload) {
+    int32_t var0 = payload->var0;
+    int32_t var1 = payload->var1;
+    int32_t var2 = payload->var2;
+
+    JSContext* ctx = payload->ctx;
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    JSValue returns[2];
+    if (payload->errnum != 0) {  // TODO
+        returns[0] = JS_NewError(ctx);
+        returns[1] = JS_UNDEFINED;
+    } else {
+        returns[0] = JS_UNDEFINED;
+        returns[1] = js_retval;
+    }
+    JS_Call(payload->ctx, payload->cb, payload->this_val, 2, returns);
+
+    if (payload->errnum == 0) {
+    }
+
+    JS_FreeValue(ctx, payload->cb);
+    free(payload);
+}
+
+static void fs_fchown_wrapper_worker(
+    struct fs_fchown_wrapper_payload* payload) {
+    errno = 0;
+    fs_fchown(payload->var0, payload->var1, payload->var2);
+    payload->errnum = errno;
+}
+
+static JSValue fs_fchown_wrapper(JSContext* ctx, JSValueConst this_val,
+                                 int argc, JSValueConst* argv) {
+    int32_t var0;
+    JS_ToInt32(ctx, &var0, argv[0]);
+
+    int32_t var1;
+    JS_ToInt32(ctx, &var1, argv[1]);
+
+    int32_t var2;
+    JS_ToInt32(ctx, &var2, argv[2]);
+
+    struct fs_fchown_wrapper_payload* payload =
+        (struct fs_fchown_wrapper_payload*)malloc(
+            sizeof(struct fs_fchown_wrapper_payload));
+
+    payload->var0 = var0;
+    payload->var1 = var1;
+    payload->var2 = var2;
+    payload->ctx = ctx;
+    payload->this_val = this_val;
+    payload->cb = JS_DupValue(ctx, argv[3]);
+    payload->errnum = 0;
+
+    push_to_generic_event_queue(fs_fchown_wrapper_worker, payload,
+                                fs_fchown_wrapper_event);
+
+    return JS_UNDEFINED;
+}
+
+
+
+static JSValue fs_fchownSync_wrapper(JSContext* ctx, JSValueConst this_val,
+                                     int argc, JSValueConst* argv) {
+    int32_t var0;
+    JS_ToInt32(ctx, &var0, argv[0]);
+
+    int32_t var1;
+    JS_ToInt32(ctx, &var1, argv[1]);
+
+    int32_t var2;
+    JS_ToInt32(ctx, &var2, argv[2]);
+
+    errno = 0;
+    fs_fchown(var0, var1, var2);
+    if (errno != 0) {  // TODO
+
+        return JS_ThrowInternalError(ctx, "errno is not 0");
+    }
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    return js_retval;
+}
+
+
+
+
+struct fs_chown_wrapper_payload {
+    JSContext* ctx;
+    JSValueConst this_val;
+    char* var0;
+    int32_t var1;
+    int32_t var2;
+
+    JSValue cb;
+    int errnum;
+};
+
+static void fs_chown_wrapper_event(struct fs_chown_wrapper_payload* payload) {
+    char* var0 = payload->var0;
+    int32_t var1 = payload->var1;
+    int32_t var2 = payload->var2;
+
+    JSContext* ctx = payload->ctx;
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    JSValue returns[2];
+    if (payload->errnum != 0) {  // TODO
+        returns[0] = JS_NewError(ctx);
+        returns[1] = JS_UNDEFINED;
+    } else {
+        returns[0] = JS_UNDEFINED;
+        returns[1] = js_retval;
+    }
+    JS_Call(payload->ctx, payload->cb, payload->this_val, 2, returns);
+
+    JS_FreeCString(ctx, var0);
+
+    if (payload->errnum == 0) {
+    }
+
+    JS_FreeValue(ctx, payload->cb);
+    free(payload);
+}
+
+static void fs_chown_wrapper_worker(struct fs_chown_wrapper_payload* payload) {
+    errno = 0;
+    fs_chown(payload->var0, payload->var1, payload->var2);
+    payload->errnum = errno;
+}
+
+static JSValue fs_chown_wrapper(JSContext* ctx, JSValueConst this_val, int argc,
+                                JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    int32_t var1;
+    JS_ToInt32(ctx, &var1, argv[1]);
+
+    int32_t var2;
+    JS_ToInt32(ctx, &var2, argv[2]);
+
+    struct fs_chown_wrapper_payload* payload =
+        (struct fs_chown_wrapper_payload*)malloc(
+            sizeof(struct fs_chown_wrapper_payload));
+
+    payload->var0 = var0;
+    payload->var1 = var1;
+    payload->var2 = var2;
+    payload->ctx = ctx;
+    payload->this_val = this_val;
+    payload->cb = JS_DupValue(ctx, argv[3]);
+    payload->errnum = 0;
+
+    push_to_generic_event_queue(fs_chown_wrapper_worker, payload,
+                                fs_chown_wrapper_event);
+
+    return JS_UNDEFINED;
+}
+
+
+
+
+struct fs_futimes_wrapper_payload {
+    JSContext* ctx;
+    JSValueConst this_val;
+    int32_t var0;
+    int64_t var1;
+    int64_t var2;
+
+    JSValue cb;
+    int errnum;
+};
+
+static void fs_futimes_wrapper_event(
+    struct fs_futimes_wrapper_payload* payload) {
+    int32_t var0 = payload->var0;
+    int64_t var1 = payload->var1;
+    int64_t var2 = payload->var2;
+
+    JSContext* ctx = payload->ctx;
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    JSValue returns[2];
+    if (payload->errnum != 0) {  // TODO
+        returns[0] = JS_NewError(ctx);
+        returns[1] = JS_UNDEFINED;
+    } else {
+        returns[0] = JS_UNDEFINED;
+        returns[1] = js_retval;
+    }
+    JS_Call(payload->ctx, payload->cb, payload->this_val, 2, returns);
+
+    if (payload->errnum == 0) {
+    }
+
+    JS_FreeValue(ctx, payload->cb);
+    free(payload);
+}
+
+static void fs_futimes_wrapper_worker(
+    struct fs_futimes_wrapper_payload* payload) {
+    errno = 0;
+    fs_futimes(payload->var0, payload->var1, payload->var2);
+    payload->errnum = errno;
+}
+
+static JSValue fs_futimes_wrapper(JSContext* ctx, JSValueConst this_val,
+                                  int argc, JSValueConst* argv) {
+    int32_t var0;
+    JS_ToInt32(ctx, &var0, argv[0]);
+
+    int64_t var1;
+    JS_ToInt64(ctx, &var1, argv[1]);
+
+    int64_t var2;
+    JS_ToInt64(ctx, &var2, argv[2]);
+
+    struct fs_futimes_wrapper_payload* payload =
+        (struct fs_futimes_wrapper_payload*)malloc(
+            sizeof(struct fs_futimes_wrapper_payload));
+
+    payload->var0 = var0;
+    payload->var1 = var1;
+    payload->var2 = var2;
+    payload->ctx = ctx;
+    payload->this_val = this_val;
+    payload->cb = JS_DupValue(ctx, argv[3]);
+    payload->errnum = 0;
+
+    push_to_generic_event_queue(fs_futimes_wrapper_worker, payload,
+                                fs_futimes_wrapper_event);
+
+    return JS_UNDEFINED;
+}
+
+
+
+static JSValue fs_futimesSync_wrapper(JSContext* ctx, JSValueConst this_val,
+                                      int argc, JSValueConst* argv) {
+    int32_t var0;
+    JS_ToInt32(ctx, &var0, argv[0]);
+
+    int64_t var1;
+    JS_ToInt64(ctx, &var1, argv[1]);
+
+    int64_t var2;
+    JS_ToInt64(ctx, &var2, argv[2]);
+
+    errno = 0;
+    fs_futimes(var0, var1, var2);
+    if (errno != 0) {  // TODO
+
+        return JS_ThrowInternalError(ctx, "errno is not 0");
+    }
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    return js_retval;
+}
+
+
 #define countof(arr) (sizeof(arr) / sizeof(*arr))
 
 static const JSCFunctionListEntry bindings_funcs[] = {
@@ -1427,6 +2289,23 @@ static const JSCFunctionListEntry bindings_funcs[] = {
    JS_CFUNC_DEF("lstatSync", 1, fs_lstatSync_wrapper),
    JS_CFUNC_DEF("stat", 2, fs_stat_wrapper),
    JS_CFUNC_DEF("statSync", 1, fs_statSync_wrapper),
+   JS_CFUNC_DEF("statfs", 2, fs_statfs_wrapper),
+   JS_CFUNC_DEF("statfsSync", 1, fs_statfsSync_wrapper),
+   JS_CFUNC_DEF("readlink", 2, fs_readlink_wrapper),
+   JS_CFUNC_DEF("readlinkSync", 1, fs_readlinkSync_wrapper),
+   JS_CFUNC_DEF("link", 3, fs_link_wrapper),
+   JS_CFUNC_DEF("linkSync", 2, fs_linkSync_wrapper),
+   JS_CFUNC_DEF("unlink", 2, fs_unlink_wrapper),
+   JS_CFUNC_DEF("unlinkSync", 1, fs_unlinkSync_wrapper),
+   JS_CFUNC_DEF("chmod", 3, fs_chmod_wrapper),
+   JS_CFUNC_DEF("chmodSync", 2, fs_chmodSync_wrapper),
+   JS_CFUNC_DEF("lchown", 4, fs_lchown_wrapper),
+   JS_CFUNC_DEF("lchownSync", 3, fs_lchownSync_wrapper),
+   JS_CFUNC_DEF("fchown", 4, fs_fchown_wrapper),
+   JS_CFUNC_DEF("fchownSync", 3, fs_fchownSync_wrapper),
+   JS_CFUNC_DEF("chown", 4, fs_chown_wrapper),
+   JS_CFUNC_DEF("futimes", 4, fs_futimes_wrapper),
+   JS_CFUNC_DEF("futimesSync", 3, fs_futimesSync_wrapper),
 };
 
 static int bindings_module_init(JSContext *ctx, JSModuleDef *m) {
