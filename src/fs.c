@@ -437,24 +437,30 @@ static JSValue fs_readSync_wrapper(JSContext* ctx, JSValueConst this_val,
 
 
 
-struct fs_readFileUtf8_wrapper_payload {
+struct fs_writeBuffer_wrapper_payload {
     JSContext* ctx;
     JSValueConst this_val;
-    char* var0;
-    int32_t var1;
-    char* retval;
+    int32_t var0;
+    array_buffer var1;
+    int64_t var2;
+    int64_t var3;
+    int64_t var4;
+    int64_t retval;
     JSValue cb;
     int errnum;
 };
 
-static void fs_readFileUtf8_wrapper_event(
-    struct fs_readFileUtf8_wrapper_payload* payload) {
-    char* var0 = payload->var0;
-    int32_t var1 = payload->var1;
-    char* retval = payload->retval;
+static void fs_writeBuffer_wrapper_event(
+    struct fs_writeBuffer_wrapper_payload* payload) {
+    int32_t var0 = payload->var0;
+    array_buffer var1 = payload->var1;
+    int64_t var2 = payload->var2;
+    int64_t var3 = payload->var3;
+    int64_t var4 = payload->var4;
+    int64_t retval = payload->retval;
     JSContext* ctx = payload->ctx;
 
-    JSValue js_retval = JS_NewStringLen(ctx, retval, strlen(retval));
+    JSValue js_retval = JS_NewInt64(ctx, retval);
 
     JSValue returns[2];
     if (payload->errnum != 0) {  // TODO
@@ -466,75 +472,86 @@ static void fs_readFileUtf8_wrapper_event(
     }
     JS_Call(payload->ctx, payload->cb, payload->this_val, 2, returns);
 
-    JS_FreeCString(ctx, var0);
-
     if (payload->errnum == 0) {
-        if (retval) {
-            free(retval);
-        }
     }
 
     JS_FreeValue(ctx, payload->cb);
     free(payload);
 }
 
-static void fs_readFileUtf8_wrapper_worker(
-    struct fs_readFileUtf8_wrapper_payload* payload) {
+static void fs_writeBuffer_wrapper_worker(
+    struct fs_writeBuffer_wrapper_payload* payload) {
     errno = 0;
-    payload->retval = fs_read_file_utf8(payload->var0, payload->var1);
+    payload->retval =
+        fs_write_buffer(payload->var0, payload->var1, payload->var2,
+                        payload->var3, payload->var4);
     payload->errnum = errno;
 }
 
-static JSValue fs_readFileUtf8_wrapper(JSContext* ctx, JSValueConst this_val,
-                                       int argc, JSValueConst* argv) {
-    const char* var0 = JS_ToCString(ctx, argv[0]);
+static JSValue fs_writeBuffer_wrapper(JSContext* ctx, JSValueConst this_val,
+                                      int argc, JSValueConst* argv) {
+    int32_t var0;
+    JS_ToInt32(ctx, &var0, argv[0]);
 
-    int32_t var1;
-    JS_ToInt32(ctx, &var1, argv[1]);
+    array_buffer var1;
+    var1.data = JS_GetArrayBuffer(ctx, &(var1.size), argv[1]);
 
-    struct fs_readFileUtf8_wrapper_payload* payload =
-        (struct fs_readFileUtf8_wrapper_payload*)malloc(
-            sizeof(struct fs_readFileUtf8_wrapper_payload));
+    int64_t var2;
+    JS_ToInt64(ctx, &var2, argv[2]);
+
+    int64_t var3;
+    JS_ToInt64(ctx, &var3, argv[3]);
+
+    int64_t var4;
+    JS_ToInt64(ctx, &var4, argv[4]);
+
+    struct fs_writeBuffer_wrapper_payload* payload =
+        (struct fs_writeBuffer_wrapper_payload*)malloc(
+            sizeof(struct fs_writeBuffer_wrapper_payload));
 
     payload->var0 = var0;
     payload->var1 = var1;
+    payload->var2 = var2;
+    payload->var3 = var3;
+    payload->var4 = var4;
     payload->ctx = ctx;
     payload->this_val = this_val;
-    payload->cb = JS_DupValue(ctx, argv[2]);
+    payload->cb = JS_DupValue(ctx, argv[5]);
     payload->errnum = 0;
 
-    push_to_generic_event_queue(fs_readFileUtf8_wrapper_worker, payload,
-                                fs_readFileUtf8_wrapper_event);
+    push_to_generic_event_queue(fs_writeBuffer_wrapper_worker, payload,
+                                fs_writeBuffer_wrapper_event);
 
     return JS_UNDEFINED;
 }
 
 
 
-static JSValue fs_readFileUtf8Sync_wrapper(JSContext* ctx,
-                                           JSValueConst this_val, int argc,
-                                           JSValueConst* argv) {
-    const char* var0 = JS_ToCString(ctx, argv[0]);
+static JSValue fs_writeBufferSync_wrapper(JSContext* ctx, JSValueConst this_val,
+                                          int argc, JSValueConst* argv) {
+    int32_t var0;
+    JS_ToInt32(ctx, &var0, argv[0]);
 
-    int32_t var1;
-    JS_ToInt32(ctx, &var1, argv[1]);
+    array_buffer var1;
+    var1.data = JS_GetArrayBuffer(ctx, &(var1.size), argv[1]);
+
+    int64_t var2;
+    JS_ToInt64(ctx, &var2, argv[2]);
+
+    int64_t var3;
+    JS_ToInt64(ctx, &var3, argv[3]);
+
+    int64_t var4;
+    JS_ToInt64(ctx, &var4, argv[4]);
 
     errno = 0;
-    char* retval = fs_read_file_utf8(var0, var1);
+    int64_t retval = fs_write_buffer(var0, var1, var2, var3, var4);
     if (errno != 0) {  // TODO
-
-        JS_FreeCString(ctx, var0);
 
         return JS_ThrowInternalError(ctx, "errno is not 0");
     }
 
-    JSValue js_retval = JS_NewStringLen(ctx, retval, strlen(retval));
-
-    JS_FreeCString(ctx, var0);
-
-    if (retval) {
-        free(retval);
-    }
+    JSValue js_retval = JS_NewInt64(ctx, retval);
 
     return js_retval;
 }
@@ -987,6 +1004,101 @@ static JSValue fs_fdatasyncSync_wrapper(JSContext* ctx, JSValueConst this_val,
 
 
 
+struct fs_mkdir_wrapper_payload {
+    JSContext* ctx;
+    JSValueConst this_val;
+    char* var0;
+    int32_t var1;
+
+    JSValue cb;
+    int errnum;
+};
+
+static void fs_mkdir_wrapper_event(struct fs_mkdir_wrapper_payload* payload) {
+    char* var0 = payload->var0;
+    int32_t var1 = payload->var1;
+
+    JSContext* ctx = payload->ctx;
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    JSValue returns[2];
+    if (payload->errnum != 0) {  // TODO
+        returns[0] = JS_NewError(ctx);
+        returns[1] = JS_UNDEFINED;
+    } else {
+        returns[0] = JS_UNDEFINED;
+        returns[1] = js_retval;
+    }
+    JS_Call(payload->ctx, payload->cb, payload->this_val, 2, returns);
+
+    JS_FreeCString(ctx, var0);
+
+    if (payload->errnum == 0) {
+    }
+
+    JS_FreeValue(ctx, payload->cb);
+    free(payload);
+}
+
+static void fs_mkdir_wrapper_worker(struct fs_mkdir_wrapper_payload* payload) {
+    errno = 0;
+    fs_mkdir(payload->var0, payload->var1);
+    payload->errnum = errno;
+}
+
+static JSValue fs_mkdir_wrapper(JSContext* ctx, JSValueConst this_val, int argc,
+                                JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    int32_t var1;
+    JS_ToInt32(ctx, &var1, argv[1]);
+
+    struct fs_mkdir_wrapper_payload* payload =
+        (struct fs_mkdir_wrapper_payload*)malloc(
+            sizeof(struct fs_mkdir_wrapper_payload));
+
+    payload->var0 = var0;
+    payload->var1 = var1;
+    payload->ctx = ctx;
+    payload->this_val = this_val;
+    payload->cb = JS_DupValue(ctx, argv[2]);
+    payload->errnum = 0;
+
+    push_to_generic_event_queue(fs_mkdir_wrapper_worker, payload,
+                                fs_mkdir_wrapper_event);
+
+    return JS_UNDEFINED;
+}
+
+
+
+static JSValue fs_mkdirSync_wrapper(JSContext* ctx, JSValueConst this_val,
+                                    int argc, JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    int32_t var1;
+    JS_ToInt32(ctx, &var1, argv[1]);
+
+    errno = 0;
+    fs_mkdir(var0, var1);
+    if (errno != 0) {  // TODO
+
+        JS_FreeCString(ctx, var0);
+
+        return JS_ThrowInternalError(ctx, "errno is not 0");
+    }
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    JS_FreeCString(ctx, var0);
+
+    return js_retval;
+}
+
+
+
+
 struct fs_readdir_wrapper_payload {
     JSContext* ctx;
     JSValueConst this_val;
@@ -1002,11 +1114,20 @@ static void fs_readdir_wrapper_event(
     string_array retval = payload->retval;
     JSContext* ctx = payload->ctx;
 
-    JSValue js_retval = JS_NewArray(ctx);
-    for (int i = 0; i < retval.count; i++) {
-        JS_SetPropertyUint32(
-            ctx, js_retval, i,
-            JS_NewStringLen(ctx, retval.strs[i], strlen(retval.strs[i])));
+    JSValue js_retval;
+    if (retval.count == 0 || retval.strs == NULL) {
+        js_retval = JS_UNDEFINED;
+    } else {
+        js_retval = JS_NewArray(ctx);
+        for (int i = 0; i < retval.count; i++) {
+            if (retval.strs[i] == NULL) {
+                JS_SetPropertyUint32(ctx, js_retval, i, JS_UNDEFINED);
+            } else {
+                JS_SetPropertyUint32(ctx, js_retval, i,
+                                     JS_NewStringLen(ctx, retval.strs[i],
+                                                     strlen(retval.strs[i])));
+            }
+        }
     }
 
     JSValue returns[2];
@@ -1076,11 +1197,20 @@ static JSValue fs_readdirSync_wrapper(JSContext* ctx, JSValueConst this_val,
         return JS_ThrowInternalError(ctx, "errno is not 0");
     }
 
-    JSValue js_retval = JS_NewArray(ctx);
-    for (int i = 0; i < retval.count; i++) {
-        JS_SetPropertyUint32(
-            ctx, js_retval, i,
-            JS_NewStringLen(ctx, retval.strs[i], strlen(retval.strs[i])));
+    JSValue js_retval;
+    if (retval.count == 0 || retval.strs == NULL) {
+        js_retval = JS_UNDEFINED;
+    } else {
+        js_retval = JS_NewArray(ctx);
+        for (int i = 0; i < retval.count; i++) {
+            if (retval.strs[i] == NULL) {
+                JS_SetPropertyUint32(ctx, js_retval, i, JS_UNDEFINED);
+            } else {
+                JS_SetPropertyUint32(ctx, js_retval, i,
+                                     JS_NewStringLen(ctx, retval.strs[i],
+                                                     strlen(retval.strs[i])));
+            }
+        }
     }
 
     JS_FreeCString(ctx, var0);
@@ -1112,10 +1242,19 @@ static void fs_fstat_wrapper_event(struct fs_fstat_wrapper_payload* payload) {
     int64_array retval = payload->retval;
     JSContext* ctx = payload->ctx;
 
-    JSValue js_retval = JS_NewArray(ctx);
-    for (int i = 0; i < retval.count; i++) {
-        JS_SetPropertyUint32(ctx, js_retval, i,
-                             JS_NewInt64(ctx, retval.data[i]));
+    JSValue js_retval;
+    if (retval.count == 0 || retval.data == NULL) {
+        js_retval = JS_UNDEFINED;
+    } else {
+        js_retval = JS_NewArray(ctx);
+        for (int i = 0; i < retval.count; i++) {
+            if (retval.data[i] == NULL) {
+                JS_SetPropertyUint32(ctx, js_retval, i, JS_UNDEFINED);
+            } else {
+                JS_SetPropertyUint32(ctx, js_retval, i,
+                                     JS_NewInt64(ctx, retval.data[i]));
+            }
+        }
     }
 
     JSValue returns[2];
@@ -1179,10 +1318,19 @@ static JSValue fs_fstatSync_wrapper(JSContext* ctx, JSValueConst this_val,
         return JS_ThrowInternalError(ctx, "errno is not 0");
     }
 
-    JSValue js_retval = JS_NewArray(ctx);
-    for (int i = 0; i < retval.count; i++) {
-        JS_SetPropertyUint32(ctx, js_retval, i,
-                             JS_NewInt64(ctx, retval.data[i]));
+    JSValue js_retval;
+    if (retval.count == 0 || retval.data == NULL) {
+        js_retval = JS_UNDEFINED;
+    } else {
+        js_retval = JS_NewArray(ctx);
+        for (int i = 0; i < retval.count; i++) {
+            if (retval.data[i] == NULL) {
+                JS_SetPropertyUint32(ctx, js_retval, i, JS_UNDEFINED);
+            } else {
+                JS_SetPropertyUint32(ctx, js_retval, i,
+                                     JS_NewInt64(ctx, retval.data[i]));
+            }
+        }
     }
 
     if (retval.data) {
@@ -1209,10 +1357,19 @@ static void fs_lstat_wrapper_event(struct fs_lstat_wrapper_payload* payload) {
     int64_array retval = payload->retval;
     JSContext* ctx = payload->ctx;
 
-    JSValue js_retval = JS_NewArray(ctx);
-    for (int i = 0; i < retval.count; i++) {
-        JS_SetPropertyUint32(ctx, js_retval, i,
-                             JS_NewInt64(ctx, retval.data[i]));
+    JSValue js_retval;
+    if (retval.count == 0 || retval.data == NULL) {
+        js_retval = JS_UNDEFINED;
+    } else {
+        js_retval = JS_NewArray(ctx);
+        for (int i = 0; i < retval.count; i++) {
+            if (retval.data[i] == NULL) {
+                JS_SetPropertyUint32(ctx, js_retval, i, JS_UNDEFINED);
+            } else {
+                JS_SetPropertyUint32(ctx, js_retval, i,
+                                     JS_NewInt64(ctx, retval.data[i]));
+            }
+        }
     }
 
     JSValue returns[2];
@@ -1278,10 +1435,19 @@ static JSValue fs_lstatSync_wrapper(JSContext* ctx, JSValueConst this_val,
         return JS_ThrowInternalError(ctx, "errno is not 0");
     }
 
-    JSValue js_retval = JS_NewArray(ctx);
-    for (int i = 0; i < retval.count; i++) {
-        JS_SetPropertyUint32(ctx, js_retval, i,
-                             JS_NewInt64(ctx, retval.data[i]));
+    JSValue js_retval;
+    if (retval.count == 0 || retval.data == NULL) {
+        js_retval = JS_UNDEFINED;
+    } else {
+        js_retval = JS_NewArray(ctx);
+        for (int i = 0; i < retval.count; i++) {
+            if (retval.data[i] == NULL) {
+                JS_SetPropertyUint32(ctx, js_retval, i, JS_UNDEFINED);
+            } else {
+                JS_SetPropertyUint32(ctx, js_retval, i,
+                                     JS_NewInt64(ctx, retval.data[i]));
+            }
+        }
     }
 
     JS_FreeCString(ctx, var0);
@@ -1310,10 +1476,19 @@ static void fs_stat_wrapper_event(struct fs_stat_wrapper_payload* payload) {
     int64_array retval = payload->retval;
     JSContext* ctx = payload->ctx;
 
-    JSValue js_retval = JS_NewArray(ctx);
-    for (int i = 0; i < retval.count; i++) {
-        JS_SetPropertyUint32(ctx, js_retval, i,
-                             JS_NewInt64(ctx, retval.data[i]));
+    JSValue js_retval;
+    if (retval.count == 0 || retval.data == NULL) {
+        js_retval = JS_UNDEFINED;
+    } else {
+        js_retval = JS_NewArray(ctx);
+        for (int i = 0; i < retval.count; i++) {
+            if (retval.data[i] == NULL) {
+                JS_SetPropertyUint32(ctx, js_retval, i, JS_UNDEFINED);
+            } else {
+                JS_SetPropertyUint32(ctx, js_retval, i,
+                                     JS_NewInt64(ctx, retval.data[i]));
+            }
+        }
     }
 
     JSValue returns[2];
@@ -1379,10 +1554,19 @@ static JSValue fs_statSync_wrapper(JSContext* ctx, JSValueConst this_val,
         return JS_ThrowInternalError(ctx, "errno is not 0");
     }
 
-    JSValue js_retval = JS_NewArray(ctx);
-    for (int i = 0; i < retval.count; i++) {
-        JS_SetPropertyUint32(ctx, js_retval, i,
-                             JS_NewInt64(ctx, retval.data[i]));
+    JSValue js_retval;
+    if (retval.count == 0 || retval.data == NULL) {
+        js_retval = JS_UNDEFINED;
+    } else {
+        js_retval = JS_NewArray(ctx);
+        for (int i = 0; i < retval.count; i++) {
+            if (retval.data[i] == NULL) {
+                JS_SetPropertyUint32(ctx, js_retval, i, JS_UNDEFINED);
+            } else {
+                JS_SetPropertyUint32(ctx, js_retval, i,
+                                     JS_NewInt64(ctx, retval.data[i]));
+            }
+        }
     }
 
     JS_FreeCString(ctx, var0);
@@ -1411,10 +1595,19 @@ static void fs_statfs_wrapper_event(struct fs_statfs_wrapper_payload* payload) {
     int64_array retval = payload->retval;
     JSContext* ctx = payload->ctx;
 
-    JSValue js_retval = JS_NewArray(ctx);
-    for (int i = 0; i < retval.count; i++) {
-        JS_SetPropertyUint32(ctx, js_retval, i,
-                             JS_NewInt64(ctx, retval.data[i]));
+    JSValue js_retval;
+    if (retval.count == 0 || retval.data == NULL) {
+        js_retval = JS_UNDEFINED;
+    } else {
+        js_retval = JS_NewArray(ctx);
+        for (int i = 0; i < retval.count; i++) {
+            if (retval.data[i] == NULL) {
+                JS_SetPropertyUint32(ctx, js_retval, i, JS_UNDEFINED);
+            } else {
+                JS_SetPropertyUint32(ctx, js_retval, i,
+                                     JS_NewInt64(ctx, retval.data[i]));
+            }
+        }
     }
 
     JSValue returns[2];
@@ -1481,10 +1674,19 @@ static JSValue fs_statfsSync_wrapper(JSContext* ctx, JSValueConst this_val,
         return JS_ThrowInternalError(ctx, "errno is not 0");
     }
 
-    JSValue js_retval = JS_NewArray(ctx);
-    for (int i = 0; i < retval.count; i++) {
-        JS_SetPropertyUint32(ctx, js_retval, i,
-                             JS_NewInt64(ctx, retval.data[i]));
+    JSValue js_retval;
+    if (retval.count == 0 || retval.data == NULL) {
+        js_retval = JS_UNDEFINED;
+    } else {
+        js_retval = JS_NewArray(ctx);
+        for (int i = 0; i < retval.count; i++) {
+            if (retval.data[i] == NULL) {
+                JS_SetPropertyUint32(ctx, js_retval, i, JS_UNDEFINED);
+            } else {
+                JS_SetPropertyUint32(ctx, js_retval, i,
+                                     JS_NewInt64(ctx, retval.data[i]));
+            }
+        }
     }
 
     JS_FreeCString(ctx, var0);
@@ -1514,7 +1716,12 @@ static void fs_readlink_wrapper_event(
     char* retval = payload->retval;
     JSContext* ctx = payload->ctx;
 
-    JSValue js_retval = JS_NewStringLen(ctx, retval, strlen(retval));
+    JSValue js_retval;
+    if (retval == NULL) {
+        js_retval = JS_UNDEFINED;
+    } else {
+        js_retval = JS_NewStringLen(ctx, retval, strlen(retval));
+    }
 
     JSValue returns[2];
     if (payload->errnum != 0) {  // TODO
@@ -1580,7 +1787,12 @@ static JSValue fs_readlinkSync_wrapper(JSContext* ctx, JSValueConst this_val,
         return JS_ThrowInternalError(ctx, "errno is not 0");
     }
 
-    JSValue js_retval = JS_NewStringLen(ctx, retval, strlen(retval));
+    JSValue js_retval;
+    if (retval == NULL) {
+        js_retval = JS_UNDEFINED;
+    } else {
+        js_retval = JS_NewStringLen(ctx, retval, strlen(retval));
+    }
 
     JS_FreeCString(ctx, var0);
 
@@ -2257,6 +2469,217 @@ static JSValue fs_futimesSync_wrapper(JSContext* ctx, JSValueConst this_val,
 }
 
 
+
+
+struct fs_utimes_wrapper_payload {
+    JSContext* ctx;
+    JSValueConst this_val;
+    char* var0;
+    int64_t var1;
+    int64_t var2;
+
+    JSValue cb;
+    int errnum;
+};
+
+static void fs_utimes_wrapper_event(struct fs_utimes_wrapper_payload* payload) {
+    char* var0 = payload->var0;
+    int64_t var1 = payload->var1;
+    int64_t var2 = payload->var2;
+
+    JSContext* ctx = payload->ctx;
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    JSValue returns[2];
+    if (payload->errnum != 0) {  // TODO
+        returns[0] = JS_NewError(ctx);
+        returns[1] = JS_UNDEFINED;
+    } else {
+        returns[0] = JS_UNDEFINED;
+        returns[1] = js_retval;
+    }
+    JS_Call(payload->ctx, payload->cb, payload->this_val, 2, returns);
+
+    JS_FreeCString(ctx, var0);
+
+    if (payload->errnum == 0) {
+    }
+
+    JS_FreeValue(ctx, payload->cb);
+    free(payload);
+}
+
+static void fs_utimes_wrapper_worker(
+    struct fs_utimes_wrapper_payload* payload) {
+    errno = 0;
+    fs_utimes(payload->var0, payload->var1, payload->var2);
+    payload->errnum = errno;
+}
+
+static JSValue fs_utimes_wrapper(JSContext* ctx, JSValueConst this_val,
+                                 int argc, JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    int64_t var1;
+    JS_ToInt64(ctx, &var1, argv[1]);
+
+    int64_t var2;
+    JS_ToInt64(ctx, &var2, argv[2]);
+
+    struct fs_utimes_wrapper_payload* payload =
+        (struct fs_utimes_wrapper_payload*)malloc(
+            sizeof(struct fs_utimes_wrapper_payload));
+
+    payload->var0 = var0;
+    payload->var1 = var1;
+    payload->var2 = var2;
+    payload->ctx = ctx;
+    payload->this_val = this_val;
+    payload->cb = JS_DupValue(ctx, argv[3]);
+    payload->errnum = 0;
+
+    push_to_generic_event_queue(fs_utimes_wrapper_worker, payload,
+                                fs_utimes_wrapper_event);
+
+    return JS_UNDEFINED;
+}
+
+
+
+static JSValue fs_utimesSync_wrapper(JSContext* ctx, JSValueConst this_val,
+                                     int argc, JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    int64_t var1;
+    JS_ToInt64(ctx, &var1, argv[1]);
+
+    int64_t var2;
+    JS_ToInt64(ctx, &var2, argv[2]);
+
+    errno = 0;
+    fs_utimes(var0, var1, var2);
+    if (errno != 0) {  // TODO
+
+        JS_FreeCString(ctx, var0);
+
+        return JS_ThrowInternalError(ctx, "errno is not 0");
+    }
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    JS_FreeCString(ctx, var0);
+
+    return js_retval;
+}
+
+
+
+
+struct fs_lutimes_wrapper_payload {
+    JSContext* ctx;
+    JSValueConst this_val;
+    char* var0;
+    int64_t var1;
+    int64_t var2;
+
+    JSValue cb;
+    int errnum;
+};
+
+static void fs_lutimes_wrapper_event(
+    struct fs_lutimes_wrapper_payload* payload) {
+    char* var0 = payload->var0;
+    int64_t var1 = payload->var1;
+    int64_t var2 = payload->var2;
+
+    JSContext* ctx = payload->ctx;
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    JSValue returns[2];
+    if (payload->errnum != 0) {  // TODO
+        returns[0] = JS_NewError(ctx);
+        returns[1] = JS_UNDEFINED;
+    } else {
+        returns[0] = JS_UNDEFINED;
+        returns[1] = js_retval;
+    }
+    JS_Call(payload->ctx, payload->cb, payload->this_val, 2, returns);
+
+    JS_FreeCString(ctx, var0);
+
+    if (payload->errnum == 0) {
+    }
+
+    JS_FreeValue(ctx, payload->cb);
+    free(payload);
+}
+
+static void fs_lutimes_wrapper_worker(
+    struct fs_lutimes_wrapper_payload* payload) {
+    errno = 0;
+    fs_lutimes(payload->var0, payload->var1, payload->var2);
+    payload->errnum = errno;
+}
+
+static JSValue fs_lutimes_wrapper(JSContext* ctx, JSValueConst this_val,
+                                  int argc, JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    int64_t var1;
+    JS_ToInt64(ctx, &var1, argv[1]);
+
+    int64_t var2;
+    JS_ToInt64(ctx, &var2, argv[2]);
+
+    struct fs_lutimes_wrapper_payload* payload =
+        (struct fs_lutimes_wrapper_payload*)malloc(
+            sizeof(struct fs_lutimes_wrapper_payload));
+
+    payload->var0 = var0;
+    payload->var1 = var1;
+    payload->var2 = var2;
+    payload->ctx = ctx;
+    payload->this_val = this_val;
+    payload->cb = JS_DupValue(ctx, argv[3]);
+    payload->errnum = 0;
+
+    push_to_generic_event_queue(fs_lutimes_wrapper_worker, payload,
+                                fs_lutimes_wrapper_event);
+
+    return JS_UNDEFINED;
+}
+
+
+
+static JSValue fs_lutimesSync_wrapper(JSContext* ctx, JSValueConst this_val,
+                                      int argc, JSValueConst* argv) {
+    const char* var0 = JS_ToCString(ctx, argv[0]);
+
+    int64_t var1;
+    JS_ToInt64(ctx, &var1, argv[1]);
+
+    int64_t var2;
+    JS_ToInt64(ctx, &var2, argv[2]);
+
+    errno = 0;
+    fs_lutimes(var0, var1, var2);
+    if (errno != 0) {  // TODO
+
+        JS_FreeCString(ctx, var0);
+
+        return JS_ThrowInternalError(ctx, "errno is not 0");
+    }
+
+    JSValue js_retval = JS_UNDEFINED;
+
+    JS_FreeCString(ctx, var0);
+
+    return js_retval;
+}
+
+
 #define countof(arr) (sizeof(arr) / sizeof(*arr))
 
 static const JSCFunctionListEntry bindings_funcs[] = {
@@ -2269,8 +2692,8 @@ static const JSCFunctionListEntry bindings_funcs[] = {
    JS_CFUNC_DEF("closeSync", 1, fs_closeSync_wrapper),
    JS_CFUNC_DEF("read", 6, fs_read_wrapper),
    JS_CFUNC_DEF("readSync", 5, fs_readSync_wrapper),
-   JS_CFUNC_DEF("readFileUtf8", 3, fs_readFileUtf8_wrapper),
-   JS_CFUNC_DEF("readFileUtf8Sync", 2, fs_readFileUtf8Sync_wrapper),
+   JS_CFUNC_DEF("writeBuffer", 6, fs_writeBuffer_wrapper),
+   JS_CFUNC_DEF("writeBufferSync", 5, fs_writeBufferSync_wrapper),
    JS_CFUNC_DEF("rename", 3, fs_rename_wrapper),
    JS_CFUNC_DEF("renameSync", 2, fs_renameSync_wrapper),
    JS_CFUNC_DEF("ftruncate", 3, fs_ftruncate_wrapper),
@@ -2281,6 +2704,8 @@ static const JSCFunctionListEntry bindings_funcs[] = {
    JS_CFUNC_DEF("fsyncSync", 1, fs_fsyncSync_wrapper),
    JS_CFUNC_DEF("fdatasync", 2, fs_fdatasync_wrapper),
    JS_CFUNC_DEF("fdatasyncSync", 1, fs_fdatasyncSync_wrapper),
+   JS_CFUNC_DEF("mkdir", 3, fs_mkdir_wrapper),
+   JS_CFUNC_DEF("mkdirSync", 2, fs_mkdirSync_wrapper),
    JS_CFUNC_DEF("readdir", 2, fs_readdir_wrapper),
    JS_CFUNC_DEF("readdirSync", 1, fs_readdirSync_wrapper),
    JS_CFUNC_DEF("fstat", 2, fs_fstat_wrapper),
@@ -2306,6 +2731,10 @@ static const JSCFunctionListEntry bindings_funcs[] = {
    JS_CFUNC_DEF("chown", 4, fs_chown_wrapper),
    JS_CFUNC_DEF("futimes", 4, fs_futimes_wrapper),
    JS_CFUNC_DEF("futimesSync", 3, fs_futimesSync_wrapper),
+   JS_CFUNC_DEF("utimes", 4, fs_utimes_wrapper),
+   JS_CFUNC_DEF("utimesSync", 3, fs_utimesSync_wrapper),
+   JS_CFUNC_DEF("lutimes", 4, fs_lutimes_wrapper),
+   JS_CFUNC_DEF("lutimesSync", 3, fs_lutimesSync_wrapper),
 };
 
 static int bindings_module_init(JSContext *ctx, JSModuleDef *m) {

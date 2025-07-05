@@ -44,7 +44,12 @@ function cValueToJsValue(type){
             JSValue js_retval = JS_NewInt64(ctx, retval);
         `
         case "string": return `
-            JSValue js_retval = JS_NewStringLen(ctx, retval, strlen(retval));
+            JSValue js_retval;
+            if(retval == NULL) {
+                js_retval = JS_UNDEFINED;
+            }else{
+                js_retval = JS_NewStringLen(ctx, retval, strlen(retval));
+            }
         `
         case "boolean": return `
             JSValue js_retval = JS_NewBool(ctx, retval);
@@ -53,17 +58,38 @@ function cValueToJsValue(type){
             JSValue js_retval = JS_UNDEFINED;
         `
         case "int64array": return `
-            JSValue js_retval = JS_NewArray(ctx);
-            for(int i=0;i<retval.count;i++){
-                JS_SetPropertyUint32(ctx, js_retval, i, 
-                    JS_NewInt64(ctx, retval.data[i]));
+            JSValue js_retval;
+            if(retval.count == 0 || retval.data == NULL){
+                js_retval = JS_UNDEFINED;
+            }else{
+                js_retval = JS_NewArray(ctx);
+                for(int i=0;i<retval.count;i++){
+                    if(retval.data[i] == NULL){
+                        JS_SetPropertyUint32(ctx, js_retval, i, 
+                            JS_UNDEFINED);
+                    }else{
+                        JS_SetPropertyUint32(ctx, js_retval, i, 
+                            JS_NewInt64(ctx, retval.data[i]));    
+                    }
+
+                }
             }
         `
         case "stringarray": return `
-            JSValue js_retval = JS_NewArray(ctx);
-            for(int i=0;i<retval.count;i++){
-                JS_SetPropertyUint32(ctx, js_retval, i, 
-                    JS_NewStringLen(ctx, retval.strs[i], strlen(retval.strs[i])) );
+            JSValue js_retval;
+            if(retval.count == 0 || retval.strs == NULL){
+                js_retval = JS_UNDEFINED;
+            }else{
+                js_retval = JS_NewArray(ctx);
+                for(int i=0;i<retval.count;i++){
+                    if(retval.strs[i] == NULL){
+                        JS_SetPropertyUint32(ctx, js_retval, i,
+                            JS_UNDEFINED);
+                    }else{
+                        JS_SetPropertyUint32(ctx, js_retval, i, 
+                            JS_NewStringLen(ctx, retval.strs[i], strlen(retval.strs[i])) );
+                    }
+                }
             }
         `
         default: throw new Error("unknown type: " + type);

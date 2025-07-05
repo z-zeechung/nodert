@@ -87,8 +87,10 @@ static inline void fs_close(int fd) {
 }
 
 static inline int64_t fs_read(int fd, array_buffer buffer, int64_t offset, int64_t length, int64_t position){
-    if(_lseek(fd, position, SEEK_SET)<0){
-        return -1;
+    if(position>=0){
+        if(_lseek(fd, position, SEEK_SET)<0){
+            return -1;
+        }
     }
     int64_t bytes_read = _read(fd, buffer.data+offset, MIN(length, MAX(buffer.size-offset, 0)));
     if(bytes_read<0){
@@ -97,35 +99,17 @@ static inline int64_t fs_read(int fd, array_buffer buffer, int64_t offset, int64
     return bytes_read;
 }
 
-static inline char* fs_read_file_utf8(char* path, int flags){
-    int fd = fs_open(path, flags, 0);
-    if(fd<0){
-        return NULL;
+static inline int64_t fs_write_buffer(int fd, array_buffer buffer, int64_t offset, int64_t length, int64_t position){
+    if(position>=0){
+        if(_lseek(fd, position, SEEK_SET)<0){
+            return -1;
+        }
     }
-
-    struct _stat64 stat;
-    if(_fstat64(fd, &stat)<0){
-        fs_close(fd);
-        return NULL;
+    int64_t bytes_written = _write(fd, buffer.data+offset, MIN(length, MAX(buffer.size-offset, 0)));
+    if(bytes_written<0){
+        return -1;
     }
-
-    char* buffer = malloc(stat.st_size + 1);
-    if(buffer == NULL){
-        errno = ENOMEM;
-        fs_close(fd);
-        return NULL;
-    }
-
-    uint64_t bytes_read = read(fd, buffer, stat.st_size);
-    fs_close(fd);
-    if(bytes_read<0){
-        free(buffer);
-        return NULL;
-    }
-
-    buffer[bytes_read] = '\0';
-
-    return buffer;
+    return bytes_written;
 }
 
 static inline void fs_rename(char* old_path, char* new_path){
@@ -170,6 +154,21 @@ static inline void fs_fsync(int fd){
 
 static inline void fs_fdatasync(int fd){
     fs_fsync(fd);
+}
+
+static inline void fs_mkdir(char* path, int mode){
+    wchar_t* wpath = utf8_to_wchar(path);
+    if (!wpath){
+        errno = ENOMEM;
+        return;
+    }
+
+    if(_wmkdir(wpath) != 0){
+        free(wpath);
+        return;
+    }
+
+    free(wpath);
 }
 
 static inline string_array fs_readdir(char* path){
@@ -328,7 +327,7 @@ static inline int64_array fs_lstat(char* path){
         return arr;
     }
     
-    HANDLE hFile = CreateFileA(
+    HANDLE hFile = CreateFileW(
         wpath,                              
         GENERIC_READ,                      
         FILE_SHARE_READ | FILE_SHARE_WRITE, 
@@ -468,6 +467,46 @@ static inline char* fs_readlink(char* path){
     return wchar_to_utf8(finalPath);
 }
 
+static inline void fs_symlink(char* target, char* path, int type){
+
+    int64_array stats = fs_stat(target);
+    if(errno){
+        return;
+    }
+
+    // bool is_symlink = (stats.data[1] & S_IFMT) == S_IFLNK;
+    bool is_directory = (stats.data[1] & S_IFMT) == S_IFDIR;
+    free(stats.data);
+
+    wchar_t *wtarget = utf8_to_wchar(target);
+    wchar_t* wpath = utf8_to_wchar(path);
+
+    if(wtarget == NULL || wpath == NULL){
+        if(wtarget != NULL) free(wtarget);
+        if(wpath != NULL) free(wpath);
+        errno = ENOMEM;
+        return;
+    }
+
+    DWORD flags = is_directory ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0;
+    if (!CreateSymbolicLinkW(wpath, wtarget, flags)) {
+        if (GetLastError() == ERROR_PRIVILEGE_NOT_HELD) {
+            flags |= SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
+            if (!CreateSymbolicLinkW(wpath, wtarget, flags)) {
+                free(wtarget); free(wpath);
+                errno = EPERM;
+                return;
+            }
+        }else{
+            free(wtarget); free(wpath);
+            errno = win_errno_to_posix_errno(GetLastError(), EIO);
+            return;
+        }
+    }
+
+    free(wtarget); free(wpath);
+}
+
 static inline void fs_link(char* oldpath, char* newpath){
     wchar_t* woldpath = utf8_to_wchar(oldpath);
     wchar_t* wnewpath = utf8_to_wchar(newpath);
@@ -501,6 +540,23 @@ static inline void fs_unlink(char* path){
     _wunlink(wpath);
 
     free(wpath);
+}
+
+static inline void fs_fchmod(int fd, int mode){
+
+    HANDLE hFile = (HANDLE) _get_osfhandle(fd);
+    if(hFile == INVALID_HANDLE_VALUE){
+        errno = win_errno_to_posix_errno(GetLastError(), EIO);
+        return;
+    }
+
+    char filePath[MAX_PATH];
+    if(!GetFinalPathNameByHandle(hFile, filePath, MAX_PATH, VOLUME_NAME_DOS)){
+        errno = win_errno_to_posix_errno(GetLastError(), EIO);
+        return;
+    }
+
+    _chmod(filePath, mode);
 }
 
 static inline void fs_chmod(char* path, int mode){
@@ -549,4 +605,48 @@ static inline void fs_futimes(int fd, int64_t atime, int64_t mtime){
         errno = win_errno_to_posix_errno(GetLastError(), EIO);
         return;
     }
+}
+
+static inline void fs_utimes(char* path, int64_t atime, int64_t mtime){
+    int fd = fs_open(path, O_RDWR, 0);
+    if(fd < 0) return;
+
+    fs_futimes(fd, atime, mtime);
+
+    fs_close(fd);
+}
+
+static inline void fs_lutimes(char* path, int64_t atime, int64_t mtime){
+    
+    wchar_t *wpath = utf8_to_wchar(path);
+    if(!wpath) {
+        errno = ENOMEM;
+        return;
+    }
+
+    HANDLE hFile = CreateFileW(
+        wpath,                              
+        GENERIC_READ,                      
+        FILE_SHARE_READ | FILE_SHARE_WRITE, 
+        NULL,                              
+        OPEN_EXISTING,                     
+        FILE_FLAG_OPEN_REPARSE_POINT,      // no follow symlink
+        NULL                               
+    );
+    free(wpath);
+    if(hFile == INVALID_HANDLE_VALUE){
+        errno = win_errno_to_posix_errno(GetLastError(), EIO);
+        return;
+    }
+
+    int fd = _open_osfhandle((intptr_t)hFile, O_RDWR);
+    if(fd < 0){
+        CloseHandle(hFile);
+        errno = win_errno_to_posix_errno(GetLastError(), EIO);
+        return;
+    }
+
+    fs_futimes(fd, atime, mtime);
+
+    fs_close(fd);
 }
